@@ -100,6 +100,9 @@ export default function BFDPDashboard() {
   const hasSelectedLocation = Boolean(
     chartFilters.province || chartFilters.city || chartFilters.barangay,
   )
+  const selectedLguPath = [filters.provinceHuc, filters.cityMunName, filters.barangayName]
+    .filter(Boolean)
+    .join(' > ')
 
   const geoOptionsQuery = useGeoOptions()
   const summaryQuery = useBFDPSummary(chartFilters)
@@ -208,6 +211,7 @@ export default function BFDPDashboard() {
             <QuarterlyTrendChart
               data={quarterlyTrendQuery.data ?? []}
               selectedYear={filters.year}
+              selectedLguPath={selectedLguPath}
             />
           </section>
 

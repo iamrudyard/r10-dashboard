@@ -2,11 +2,30 @@ import Chart from 'react-apexcharts'
 import { Card } from '@tremor/react'
 import ChartEmptyState from './ChartEmptyState'
 
-const palette = ['#2f7d64', '#d97706', '#2563eb', '#dc2626', '#7c3aed', '#475569']
+const fallbackPalette = ['#475569', '#7c3aed', '#dc2626']
+
+const getStatusColor = (status = '', index = 0) => {
+  const normalizedStatus = status.toLowerCase()
+
+  if (normalizedStatus.includes('full')) {
+    return '#069c56'
+  }
+
+  if (normalizedStatus.includes('partial')) {
+    return '#ff980e'
+  }
+
+  if (normalizedStatus.includes('none') || normalizedStatus.includes('non')) {
+    return '#2563eb'
+  }
+
+  return fallbackPalette[index % fallbackPalette.length]
+}
 
 export default function StatusDonutChart({ statusCounts }) {
   const labels = Object.keys(statusCounts)
   const series = Object.values(statusCounts)
+  const colors = labels.map(getStatusColor)
 
   if (!labels.length) {
     return <ChartEmptyState title="Status Distribution" />
@@ -18,7 +37,7 @@ export default function StatusDonutChart({ statusCounts }) {
       fontFamily: 'Aptos, Segoe UI, sans-serif',
     },
     labels,
-    colors: palette,
+    colors,
     legend: {
       position: 'bottom',
       fontSize: '13px',

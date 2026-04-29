@@ -471,11 +471,13 @@ export async function getBFDPScoreByProvince(filters = {}) {
 }
 
 export async function getBFDPQuarterlyTrend(filters = {}) {
+  const quarterlyTrendFilters = { ...filters, quarter: '' }
+
   const rows = await fetchAllPages(() => {
     let query = supabase
       .from('v_bfdp_details')
       .select('province_huc, city_mun_name, barangay_name, score, year, quarter')
-    query = applyCommonFilters(query, filters)
+    query = applyCommonFilters(query, quarterlyTrendFilters)
     return query.order('quarter', { ascending: true, nullsFirst: false })
   })
 

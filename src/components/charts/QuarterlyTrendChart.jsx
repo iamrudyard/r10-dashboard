@@ -2,14 +2,25 @@ import Chart from 'react-apexcharts'
 import { Card } from '@tremor/react'
 import ChartEmptyState from './ChartEmptyState'
 
-export default function QuarterlyTrendChart({ data, selectedYear }) {
+function ChartTitle({ selectedLguPath }) {
+  return (
+    <h3 className="text-base font-semibold text-slate-950">
+      Quarterly Trend
+      {selectedLguPath ? (
+        <span className="font-normal text-slate-500"> ({selectedLguPath})</span>
+      ) : null}
+    </h3>
+  )
+}
+
+export default function QuarterlyTrendChart({ data, selectedYear, selectedLguPath }) {
   const seriesData = data.map((item) => item.averageScore)
   const hasData = seriesData.some((value) => value !== null)
 
   if (!hasData) {
     return (
       <ChartEmptyState
-        title="Quarterly Trend"
+        title={<ChartTitle selectedLguPath={selectedLguPath} />}
         message="No score values are available for the selected year or current filters."
       />
     )
@@ -40,6 +51,10 @@ export default function QuarterlyTrendChart({ data, selectedYear }) {
       labels: { style: { colors: '#475569' } },
     },
     yaxis: {
+      min: 0,
+      max: 9,
+      tickAmount: 3,
+      forceNiceScale: false,
       labels: {
         formatter: (value) => value.toFixed(0),
       },
@@ -54,7 +69,7 @@ export default function QuarterlyTrendChart({ data, selectedYear }) {
   return (
     <Card className="border border-slate-200 bg-white shadow-panel">
       <div className="flex flex-col justify-between gap-1 md:flex-row md:items-center">
-        <h3 className="text-base font-semibold text-slate-950">Quarterly Trend</h3>
+        <ChartTitle selectedLguPath={selectedLguPath} />
         <p className="text-sm text-slate-500">{selectedYear || 'All available years'}</p>
       </div>
       <Chart

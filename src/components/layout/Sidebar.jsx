@@ -21,9 +21,9 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onClose }) {
       >
         <div className="border-b border-white/10 px-6 py-6">
           <div className="text-xs font-semibold uppercase tracking-[0.22em] text-civic-100">
-            Region 10
+            LCMS
           </div>
-          <div className="mt-2 text-xl font-semibold">Report Analytics</div>
+          <div className="mt-2 text-xl font-semibold">LGU Compliance Monitoring System</div>
           <div className="mt-1 text-sm text-civic-100">Read-only compliance dashboard</div>
         </div>
 

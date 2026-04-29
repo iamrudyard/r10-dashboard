@@ -92,7 +92,6 @@ export function useBFDPQuarterlyTrend(filters) {
     queryKey: [
       'bfdp-quarterly-trend',
       filters.year,
-      filters.quarter,
       filters.province,
       filters.city,
       filters.barangay,
