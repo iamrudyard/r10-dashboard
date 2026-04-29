@@ -1,0 +1,40 @@
+{
+  "name": "r10-dashboard",
+  "version": "1.0.0",
+  "description": "Region 10 government report analytics dashboard",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iamrudyard/r10-dashboard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/iamrudyard/r10-dashboard/issues"
+  },
+  "homepage": "https://github.com/iamrudyard/r10-dashboard#readme",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.1",
+    "@tanstack/react-query": "^5.100.6",
+    "@tremor/react": "^3.18.7",
+    "@vitejs/plugin-react": "^6.0.1",
+    "apexcharts": "^5.10.6",
+    "react": "^18.3.1",
+    "react-apexcharts": "^2.1.0",
+    "react-dom": "^18.3.1",
+    "vite": "^8.0.10"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.12",
+    "tailwindcss": "^3.4.19"
+  }
+}
