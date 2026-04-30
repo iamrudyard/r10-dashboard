@@ -40,8 +40,29 @@ export default function DocumentCompletionChart({ documents }) {
       },
     },
     tooltip: {
-      y: {
-        formatter: (value) => `${value}% completion`,
+      custom: ({ dataPointIndex }) => {
+        const document = documents[dataPointIndex]
+
+        if (!document) {
+          return ''
+        }
+
+        return `
+          <div style="padding: 10px 12px; font-size: 13px; color: #0f172a;">
+            <div style="font-weight: 700;">${document.label}</div>
+            <div style="margin-top: 4px; color: #475569;">${document.percentage}% completion</div>
+            <div style="margin-top: 8px; display: grid; gap: 4px;">
+              <div style="display: flex; justify-content: space-between; gap: 18px; color: #047857; font-weight: 700;">
+                <span>Yes</span>
+                <span>${document.complete}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; gap: 18px; color: #dc2626; font-weight: 700;">
+                <span>No</span>
+                <span>${document.missing}</span>
+              </div>
+            </div>
+          </div>
+        `
       },
     },
   }

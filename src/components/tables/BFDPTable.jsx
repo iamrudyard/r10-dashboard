@@ -11,7 +11,27 @@ import {
 } from '@tremor/react'
 import { DOCUMENT_FIELDS } from '../../utils/bfdpAnalytics'
 
-const getGeoValue = (record, key) => record[key] ?? record.lib_geographic_units?.[key] ?? 'Unspecified'
+const HUC_PROVINCE_OPTIONS = ['city of cagayan de oro', 'city of iligan']
+
+const normalizeText = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '')
+
+const isHucProvinceOption = (value) => HUC_PROVINCE_OPTIONS.includes(normalizeText(value))
+
+const getGeoValue = (record, key) => {
+  const value = record[key] ?? record.lib_geographic_units?.[key]
+
+  if (value) {
+    return value
+  }
+
+  const provinceHuc = record.province_huc ?? record.lib_geographic_units?.province_huc
+
+  if (key === 'city_mun_name' && isHucProvinceOption(provinceHuc)) {
+    return provinceHuc
+  }
+
+  return 'Unspecified'
+}
 
 const badgeClassName =
   'border px-2 py-0.5 text-xs font-medium leading-4 shadow-none ring-1 ring-inset'
@@ -181,6 +201,8 @@ export default function BFDPTable({
   totalRecords = records.length,
   page = 0,
   pageSize = 25,
+  activeStatusFilter = '',
+  onClearStatusFilter,
   onPageChange,
   onPageSizeChange,
 }) {
@@ -212,9 +234,22 @@ export default function BFDPTable({
       <div className="mb-4 flex flex-col justify-between gap-2 md:flex-row md:items-center">
         <div>
           <h2 className="text-base font-semibold text-slate-950">BFDP Detailed Records</h2>
-          <p className="text-sm text-slate-500">Joined BFDP records with geographic unit fields.</p>
+          <p className="text-sm text-slate-500">
+            {activeStatusFilter
+              ? `Filtered by status: ${activeStatusFilter}`
+              : 'Joined BFDP records with geographic unit fields.'}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {activeStatusFilter ? (
+            <button
+              type="button"
+              onClick={onClearStatusFilter}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Clear status
+            </button>
+          ) : null}
           <Badge color="slate">
             {records.length} of {totalRecords} records
           </Badge>

@@ -668,6 +668,10 @@ export async function getBFDPTable(filters = {}) {
   let query = supabase.from('v_bfdp_details').select('*', { count: 'exact' })
   query = applyCommonFilters(query, filters)
 
+  if (filters.status) {
+    query = query.eq('status', filters.status)
+  }
+
   const { data, error, count } = await query
     .order('province_huc', { ascending: true, nullsFirst: false })
     .order('city_mun_name', { ascending: true, nullsFirst: false })

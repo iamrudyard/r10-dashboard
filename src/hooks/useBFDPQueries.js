@@ -145,6 +145,7 @@ export function useBFDPTable(filters) {
       filters.province,
       filters.city,
       filters.barangay,
+      filters.status,
       filters.page,
       filters.pageSize,
     ],

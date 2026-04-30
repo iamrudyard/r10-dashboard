@@ -22,7 +22,7 @@ const getStatusColor = (status = '', index = 0) => {
   return fallbackPalette[index % fallbackPalette.length]
 }
 
-export default function StatusDonutChart({ statusCounts }) {
+export default function StatusDonutChart({ statusCounts, selectedStatus, onStatusSelect }) {
   const labels = Object.keys(statusCounts)
   const series = Object.values(statusCounts)
   const colors = labels.map(getStatusColor)
@@ -35,6 +35,15 @@ export default function StatusDonutChart({ statusCounts }) {
     chart: {
       toolbar: { show: false },
       fontFamily: 'Aptos, Segoe UI, sans-serif',
+      events: {
+        dataPointSelection: (_event, _chartContext, config) => {
+          const status = labels[config.dataPointIndex]
+
+          if (status) {
+            onStatusSelect?.(status)
+          }
+        },
+      },
     },
     labels,
     colors,
@@ -66,7 +75,25 @@ export default function StatusDonutChart({ statusCounts }) {
 
   return (
     <Card className="border border-slate-200 bg-white shadow-panel">
-      <h3 className="text-base font-semibold text-slate-950">Status Distribution</h3>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold text-slate-950">Status Distribution</h3>
+          {selectedStatus ? (
+            <p className="mt-1 text-xs font-medium text-civic-700">
+              Filtering table by {selectedStatus}
+            </p>
+          ) : null}
+        </div>
+        {selectedStatus ? (
+          <button
+            type="button"
+            onClick={() => onStatusSelect?.('')}
+            className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+          >
+            Clear
+          </button>
+        ) : null}
+      </div>
       <Chart options={options} series={series} type="donut" height={310} />
     </Card>
   )

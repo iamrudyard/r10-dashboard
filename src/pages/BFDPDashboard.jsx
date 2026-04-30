@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { Card } from '@tremor/react'
 import { useQueryClient } from '@tanstack/react-query'
 import SummaryCard from '../components/cards/SummaryCard'
-import DocumentComplianceGrid from '../components/cards/DocumentComplianceGrid'
 import LocationFilters from '../components/filters/LocationFilters'
 import StatusDonutChart from '../components/charts/StatusDonutChart'
 import DocumentCompletionChart from '../components/charts/DocumentCompletionChart'
@@ -77,11 +76,13 @@ export default function BFDPDashboard({ initialFilters }) {
     [initialFilters],
   )
   const [filters, setFilters] = useState(normalizedInitialFilters)
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('')
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(25)
 
   useEffect(() => {
     setFilters(normalizedInitialFilters)
+    setSelectedStatusFilter('')
     setPage(0)
   }, [normalizedInitialFilters])
 
@@ -92,10 +93,20 @@ export default function BFDPDashboard({ initialFilters }) {
       province: filters.provinceHuc,
       city: filters.cityMunName,
       barangay: filters.barangayName,
+      status: selectedStatusFilter,
       page,
       pageSize,
     }),
-    [filters.year, filters.quarter, filters.provinceHuc, filters.cityMunName, filters.barangayName, page, pageSize],
+    [
+      filters.year,
+      filters.quarter,
+      filters.provinceHuc,
+      filters.cityMunName,
+      filters.barangayName,
+      selectedStatusFilter,
+      page,
+      pageSize,
+    ],
   )
 
   const chartFilters = useMemo(
@@ -145,6 +156,10 @@ export default function BFDPDashboard({ initialFilters }) {
   const locationStats = locationStatsQuery.data
   const documentCompletion = documentsQuery.data ?? []
   const tableData = tableQuery.data ?? { rows: [], count: 0 }
+  const hasDashboardRecords =
+    Number(summary?.totalRecords ?? 0) > 0 || tableData.count > 0 || documentCompletion.some(
+      (document) => document.complete > 0 || document.missing > 0,
+    )
   const isRefreshing =
     summaryQuery.isFetching ||
     locationStatsQuery.isFetching ||
@@ -155,7 +170,13 @@ export default function BFDPDashboard({ initialFilters }) {
 
   const handleFilterChange = (nextFilters) => {
     setPage(0)
+    setSelectedStatusFilter('')
     setFilters(nextFilters)
+  }
+
+  const handleStatusFilterChange = (status) => {
+    setPage(0)
+    setSelectedStatusFilter((current) => (current === status ? '' : status))
   }
 
   const handleRefresh = () => {
@@ -190,14 +211,14 @@ export default function BFDPDashboard({ initialFilters }) {
       {!isInitialDashboardLoading &&
       !dashboardError &&
       hasSelectedLocation &&
-      tableData.count === 0 ? (
+      !hasDashboardRecords ? (
         <EmptyState />
       ) : null}
 
       {!isInitialDashboardLoading &&
       !dashboardError &&
       hasSelectedLocation &&
-      tableData.count > 0 ? (
+      hasDashboardRecords ? (
         <>
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             {(locationStats?.cards ?? []).map((card) => (
@@ -212,13 +233,6 @@ export default function BFDPDashboard({ initialFilters }) {
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
-            <StatusDonutChart statusCounts={summary?.statusCounts ?? {}} />
-            <DocumentCompletionChart documents={documentCompletion} />
-          </section>
-
-          <DocumentComplianceGrid documents={documentCompletion} />
-
-          <section className="grid gap-6 xl:grid-cols-2">
             <ScoreByProvinceChart data={scoreByProvinceQuery.data ?? []} />
             <QuarterlyTrendChart
               data={quarterlyTrendQuery.data ?? []}
@@ -227,11 +241,22 @@ export default function BFDPDashboard({ initialFilters }) {
             />
           </section>
 
+          <section className="grid gap-6 xl:grid-cols-2">
+            <StatusDonutChart
+              statusCounts={summary?.statusCounts ?? {}}
+              selectedStatus={selectedStatusFilter}
+              onStatusSelect={handleStatusFilterChange}
+            />
+            <DocumentCompletionChart documents={documentCompletion} />
+          </section>
+
           <BFDPTable
             records={tableData.rows}
             totalRecords={tableData.count}
             page={page}
             pageSize={pageSize}
+            activeStatusFilter={selectedStatusFilter}
+            onClearStatusFilter={() => handleStatusFilterChange(selectedStatusFilter)}
             onPageChange={setPage}
             onPageSizeChange={(nextPageSize) => {
               setPage(0)
