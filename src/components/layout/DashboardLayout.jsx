@@ -23,7 +23,6 @@ export default function DashboardLayout({ activePage, onNavigate, children }) {
       <div className="min-w-0 flex-1">
         <Header
           title={titles[activePage] ?? 'Overview'}
-          eyebrow="Monitoring workspace"
           onMenuClick={() => setSidebarOpen(true)}
         />
         <main className="px-4 py-6 md:px-8">{children}</main>

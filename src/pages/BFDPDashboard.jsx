@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Card } from '@tremor/react'
 import { useQueryClient } from '@tanstack/react-query'
 import SummaryCard from '../components/cards/SummaryCard'
@@ -19,7 +19,7 @@ import {
   useGeoOptions,
 } from '../hooks/useBFDPQueries'
 
-const initialFilters = {
+const defaultFilters = {
   provinceHuc: '',
   cityMunName: '',
   barangayName: '',
@@ -31,7 +31,7 @@ function LoadingState() {
   return (
     <Card className="border border-slate-200 bg-white p-8 text-center shadow-panel">
       <div className="text-sm font-semibold text-civic-700">Loading BFDP dashboard...</div>
-      <p className="mt-2 text-sm text-slate-500">Fetching cached view data from Supabase.</p>
+      <p className="mt-2 text-sm text-slate-500">Fetching data...</p>
     </Card>
   )
 }
@@ -67,11 +67,23 @@ function SelectionRequiredState() {
   )
 }
 
-export default function BFDPDashboard() {
+export default function BFDPDashboard({ initialFilters }) {
   const queryClient = useQueryClient()
-  const [filters, setFilters] = useState(initialFilters)
+  const normalizedInitialFilters = useMemo(
+    () => ({
+      ...defaultFilters,
+      ...(initialFilters ?? {}),
+    }),
+    [initialFilters],
+  )
+  const [filters, setFilters] = useState(normalizedInitialFilters)
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(25)
+
+  useEffect(() => {
+    setFilters(normalizedInitialFilters)
+    setPage(0)
+  }, [normalizedInitialFilters])
 
   const queryFilters = useMemo(
     () => ({

@@ -1,118 +1,261 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Badge, Card } from '@tremor/react'
+import { useQueryClient } from '@tanstack/react-query'
 import SummaryCard from '../components/cards/SummaryCard'
-import { useBFDPSummary } from '../hooks/useBFDPQueries'
+import LocationFilters from '../components/filters/LocationFilters'
+import { useGeoOptions, useOverviewBFDPStats, useOverviewLocationStats } from '../hooks/useBFDPQueries'
+
+const initialFilters = {
+  provinceHuc: '',
+  cityMunName: '',
+  barangayName: '',
+  year: '',
+  quarter: '',
+  month: '',
+}
+
+const reportModules = [
+  {
+    id: 'bfdp',
+    title: 'BFDP',
+    description: 'Barangay Full Disclosure Policy',
+    frequency: 'Quarterly',
+    status: 'Live',
+    color: 'emerald',
+    periods: ['quarter'],
+  },
+  {
+    id: 'sglg',
+    title: 'SGLG',
+    description: 'Seal of Good Local Governance',
+    frequency: 'Annual',
+    status: 'Reserved',
+    color: 'amber',
+    periods: [],
+  },
+  {
+    id: 'future',
+    title: 'Other future reports',
+    description: 'Reserved for future schemas',
+    frequency: 'To be configured',
+    status: 'Reserved',
+    color: 'slate',
+    periods: [],
+  },
+]
+
+function getReportState(report, filters) {
+  const selectedPeriod = filters.month ? 'month' : filters.quarter ? 'quarter' : ''
+
+  if (selectedPeriod && !report.periods.includes(selectedPeriod)) {
+    return {
+      label: 'Not applicable',
+      color: 'slate',
+      isApplicable: false,
+    }
+  }
+
+  return {
+    label: report.status,
+    color: report.color,
+    isApplicable: true,
+  }
+}
+
+function SelectionState() {
+  return (
+    <Card className="border border-slate-200 bg-white p-8 text-center shadow-panel">
+      <div className="text-base font-semibold text-slate-950">Select a location</div>
+      <p className="mt-2 text-sm text-slate-500">Population and LGU profile cards will appear here.</p>
+    </Card>
+  )
+}
+
+function getBFDPFilterPayload(filters) {
+  return {
+    provinceHuc: filters.provinceHuc,
+    cityMunName: filters.cityMunName,
+    barangayName: filters.barangayName,
+    year: filters.year,
+    quarter: filters.quarter,
+  }
+}
+
+function BFDPCardStats({ stats, isLoading, isApplicable, hasSelectedLocation }) {
+  if (!hasSelectedLocation) {
+    return (
+      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+        Select a location to view compliance values.
+      </div>
+    )
+  }
+
+  if (!isApplicable) {
+    return (
+      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+        Not applicable for Month filter.
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        {['Full Compliant', 'Partial Compliant', 'None Compliant'].map((title) => (
+          <div key={title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              {title}
+            </div>
+            <div className="mt-1 text-sm font-semibold text-slate-900">Loading...</div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (stats?.mode === 'status') {
+    return (
+      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Status
+        </div>
+        <div className="mt-1 text-sm font-semibold text-slate-900">{stats.status}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      {(stats?.cards ?? []).map((card) => (
+        <div key={card.title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            {card.title}
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-900">{card.value}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function Overview({ onNavigate }) {
-  const overviewFilters = useMemo(
-    () => ({
-      year: '',
-      quarter: '',
-      province: '',
-      city: '',
-      barangay: '',
-    }),
-    [],
-  )
+  const queryClient = useQueryClient()
+  const [filters, setFilters] = useState(initialFilters)
 
-  const summaryQuery = useBFDPSummary(overviewFilters, { requireLocation: false })
-  const analytics = summaryQuery.data
-  const statusEntries = Object.entries(analytics?.statusCounts ?? {})
+  const locationStatsFilters = useMemo(
+    () => ({
+      province: filters.provinceHuc,
+      city: filters.cityMunName,
+      barangay: filters.barangayName,
+    }),
+    [filters.provinceHuc, filters.cityMunName, filters.barangayName],
+  )
+  const bfdpStatsFilters = useMemo(
+    () => ({
+      year: filters.year,
+      quarter: filters.quarter,
+      province: filters.provinceHuc,
+      city: filters.cityMunName,
+      barangay: filters.barangayName,
+    }),
+    [filters.year, filters.quarter, filters.provinceHuc, filters.cityMunName, filters.barangayName],
+  )
+  const hasSelectedLocation = Boolean(
+    locationStatsFilters.province || locationStatsFilters.city || locationStatsFilters.barangay,
+  )
+  const isBFDPApplicable = !filters.month
+
+  const geoOptionsQuery = useGeoOptions()
+  const locationStatsQuery = useOverviewLocationStats(locationStatsFilters)
+  const bfdpStatsQuery = useOverviewBFDPStats(bfdpStatsFilters, { enabled: isBFDPApplicable })
+  const locationCards = locationStatsQuery.data?.cards ?? []
+
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['geo-options'] })
+    queryClient.invalidateQueries({ queryKey: ['overview-location-stats'] })
+    queryClient.invalidateQueries({ queryKey: ['overview-bfdp-stats'] })
+  }
 
   return (
     <div className="space-y-6">
-      <section className="rounded-xl border border-civic-900/10 bg-white p-6 shadow-panel">
-        <div className="max-w-3xl">
-          <Badge color="emerald">BFDP active module</Badge>
-          <h2 className="mt-4 text-2xl font-semibold text-slate-950">Overview Dashboard</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            A read-only analytics workspace for government report monitoring. BFDP is implemented
-            first; SGLG and future report modules are reserved until schemas are provided.
-          </p>
-        </div>
-      </section>
+      <LocationFilters
+        filters={filters}
+        onChange={setFilters}
+        geoOptions={geoOptionsQuery.data}
+        optionsLoading={geoOptionsQuery.isLoading}
+        optionError={geoOptionsQuery.error?.message}
+        onRefresh={handleRefresh}
+        isRefreshing={geoOptionsQuery.isFetching || locationStatsQuery.isFetching || bfdpStatsQuery.isFetching}
+        includeMonth
+      />
 
-      {summaryQuery.error ? (
+      {locationStatsQuery.error ? (
         <Card className="border border-red-200 bg-red-50 text-red-700 shadow-panel">
-          {summaryQuery.error.message}
+          {locationStatsQuery.error.message}
         </Card>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard
-          title="BFDP Records"
-          value={summaryQuery.isLoading ? 'Loading...' : analytics?.totalRecords ?? 0}
-        />
-        <SummaryCard
-          title="LGUs with BFDP records"
-          value={summaryQuery.isLoading ? 'Loading...' : analytics?.uniqueLguCount ?? 'N/A'}
-        />
-        <SummaryCard
-          title="Average BFDP Score"
-          value={summaryQuery.isLoading ? 'Loading...' : analytics?.averageScore ?? 'N/A'}
-        />
-        <SummaryCard
-          title="Status Values"
-          value={summaryQuery.isLoading ? 'Loading...' : statusEntries.length}
-          note="Dynamically grouped from BFDP status"
-        />
-      </section>
+      {!hasSelectedLocation ? <SelectionState /> : null}
 
-      <section className="grid gap-6 xl:grid-cols-3">
-        <Card className="border border-slate-200 bg-white shadow-panel xl:col-span-1">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-950">BFDP</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Barangay Full Disclosure Policy analytics from cached SQL views.
-              </p>
-            </div>
-            <Badge color="emerald">Live</Badge>
-          </div>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {statusEntries.length ? (
-              statusEntries.map(([status, count]) => (
-                <Badge key={status} color="blue">
-                  {status}: {count}
-                </Badge>
+      {hasSelectedLocation ? (
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {locationStatsQuery.isLoading
+            ? ['Population', 'Income Class', 'LGU Count', 'PSGC Code'].map((title) => (
+                <SummaryCard key={title} title={title} value="Loading..." />
               ))
-            ) : (
-              <Badge color="slate">No status data</Badge>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('bfdp')}
-            className="mt-6 rounded-lg bg-civic-700 px-4 py-2 text-sm font-semibold text-white hover:bg-civic-600"
-          >
-            Open BFDP Dashboard
-          </button>
-        </Card>
+            : locationCards.map((card) => (
+                <SummaryCard
+                  key={card.title}
+                  title={card.title}
+                  value={card.value}
+                  info={card.info}
+                />
+              ))}
+        </section>
+      ) : null}
 
-        <Card className="border border-slate-200 bg-white shadow-panel">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-950">SGLG</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                SGLG dashboard will be added soon.
-              </p>
-            </div>
-            <Badge color="amber">Placeholder</Badge>
-          </div>
-        </Card>
+      <section className="grid gap-4 xl:grid-cols-3">
+        {reportModules.map((report) => {
+          const reportState = getReportState(report, filters)
 
-        <Card className="border border-slate-200 bg-white shadow-panel">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-950">Other future reports</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Future report dashboards can be added when table schemas and requirements are
-                available.
-              </p>
-            </div>
-            <Badge color="slate">Reserved</Badge>
-          </div>
-        </Card>
+          return (
+            <Card key={report.id} className="border border-slate-200 bg-white shadow-panel">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-950">{report.title}</h3>
+                  <p className="mt-1 text-sm text-slate-600">{report.description}</p>
+                </div>
+                <Badge color={reportState.color}>{reportState.label}</Badge>
+              </div>
+              {report.id === 'bfdp' ? (
+                <BFDPCardStats
+                  stats={bfdpStatsQuery.data}
+                  isLoading={bfdpStatsQuery.isLoading}
+                  isApplicable={reportState.isApplicable}
+                  hasSelectedLocation={hasSelectedLocation}
+                />
+              ) : null}
+              <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    Frequency
+                  </div>
+                  <div className="mt-1 text-sm font-semibold text-slate-900">{report.frequency}</div>
+                </div>
+                {report.id === 'bfdp' ? (
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('bfdp', { filters: getBFDPFilterPayload(filters) })}
+                    disabled={!reportState.isApplicable}
+                    className="rounded-lg bg-civic-700 px-4 py-2 text-sm font-semibold text-white hover:bg-civic-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    Open
+                  </button>
+                ) : null}
+              </div>
+            </Card>
+          )
+        })}
       </section>
     </div>
   )

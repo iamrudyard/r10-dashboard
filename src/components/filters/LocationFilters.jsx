@@ -8,6 +8,21 @@ const quarters = [
   { value: '4', label: 'Quarter 4' },
 ]
 
+const months = [
+  { value: '1', label: 'January' },
+  { value: '2', label: 'February' },
+  { value: '3', label: 'March' },
+  { value: '4', label: 'April' },
+  { value: '5', label: 'May' },
+  { value: '6', label: 'June' },
+  { value: '7', label: 'July' },
+  { value: '8', label: 'August' },
+  { value: '9', label: 'September' },
+  { value: '10', label: 'October' },
+  { value: '11', label: 'November' },
+  { value: '12', label: 'December' },
+]
+
 function SelectField({ label, value, onChange, children, disabled }) {
   return (
     <label className="block">
@@ -147,6 +162,7 @@ export default function LocationFilters({
   onRefresh,
   refreshDisabled = false,
   isRefreshing = false,
+  includeMonth = false,
 }) {
   const locations = geoOptions?.locations ?? []
   const provinceOptions = geoOptions?.provinces ?? []
@@ -192,6 +208,14 @@ export default function LocationFilters({
       nextFilters.barangayName = ''
     }
 
+    if (key === 'quarter' && value) {
+      nextFilters.month = ''
+    }
+
+    if (key === 'month' && value) {
+      nextFilters.quarter = ''
+    }
+
     onChange(nextFilters)
   }
 
@@ -207,6 +231,7 @@ export default function LocationFilters({
               barangayName: '',
               year: '',
               quarter: '',
+              ...(includeMonth ? { month: '' } : {}),
             })
           }
           className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -229,7 +254,7 @@ export default function LocationFilters({
         </div>
       ) : null}
 
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className={`grid gap-3 md:grid-cols-2 ${includeMonth ? 'xl:grid-cols-6' : 'xl:grid-cols-5'}`}>
         <SelectField
           label="Province/HUC"
           value={filters.provinceHuc}
@@ -272,6 +297,7 @@ export default function LocationFilters({
         <SelectField
           label="Quarter"
           value={filters.quarter}
+          disabled={Boolean(filters.month)}
           onChange={(value) => updateFilter('quarter', value)}
         >
           <option value="">All Quarters</option>
@@ -281,6 +307,22 @@ export default function LocationFilters({
             </option>
           ))}
         </SelectField>
+
+        {includeMonth ? (
+          <SelectField
+            label="Month"
+            value={filters.month}
+            disabled={Boolean(filters.quarter)}
+            onChange={(value) => updateFilter('month', value)}
+          >
+            <option value="">All Months</option>
+            {months.map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
+            ))}
+          </SelectField>
+        ) : null}
       </div>
     </Card>
   )

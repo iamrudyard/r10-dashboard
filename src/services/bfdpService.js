@@ -8,6 +8,7 @@ const STATUS_LABELS = {
   partial: 'Partial Compliant',
   none: 'None Compliant',
 }
+const HUC_PROVINCE_OPTIONS = ['city of cagayan de oro', 'city of iligan']
 
 const normalizeOption = (value) => (typeof value === 'string' ? value.trim() : value)
 
@@ -139,6 +140,53 @@ const getSelectedIncomeClass = (rows, filters = {}) => {
   return incomeClasses[0] || 'N/A'
 }
 
+const getPopulationTotal = (rows) => {
+  const aggregateRows = rows.filter((row) => normalizeOption(row.city_mun_name) && isBlank(row.barangay_name))
+  const detailRows = rows.filter((row) => normalizeOption(row.barangay_name))
+  const sourceRows = aggregateRows.length ? aggregateRows : detailRows
+
+  return sourceRows.reduce((sum, row) => sum + (toNumber(row.population_2024) ?? 0), 0)
+}
+
+const getLocationPopulation = (row, fallbackRows = []) => {
+  const population = toNumber(row?.population_2024)
+
+  if (population !== null) {
+    return formatNumber(population)
+  }
+
+  return formatNumber(getPopulationTotal(fallbackRows))
+}
+
+const isHucProvinceOption = (value) => HUC_PROVINCE_OPTIONS.includes(normalizeText(value))
+
+const getLatestRecord = (rows) =>
+  [...rows].sort((left, right) => {
+    if ((right.year ?? 0) !== (left.year ?? 0)) {
+      return (right.year ?? 0) - (left.year ?? 0)
+    }
+
+    if ((right.quarter ?? 0) !== (left.quarter ?? 0)) {
+      return (right.quarter ?? 0) - (left.quarter ?? 0)
+    }
+
+    return (right.id ?? 0) - (left.id ?? 0)
+  })[0]
+
+const getStatusCounts = (rows) =>
+  rows.reduce(
+    (counts, row) => {
+      const group = getStatusGroup(row.status)
+
+      if (group) {
+        counts[group] += 1
+      }
+
+      return counts
+    },
+    { full: 0, partial: 0, none: 0 },
+  )
+
 function applyCommonFilters(query, filters = {}, includeLocation = true) {
   if (filters.year) {
     query = query.eq('year', Number(filters.year))
@@ -208,6 +256,147 @@ export async function getGeoOptions() {
     provinces: uniqueSorted(geoRows.map((row) => row.province_huc)),
     locations: geoRows,
     years: [...new Set(yearRows.map((row) => row.year).filter(Boolean))].sort((a, b) => b - a),
+  }
+}
+
+export async function getOverviewLocationStats(filters = {}) {
+  const geoRows = await fetchAllPages(() => {
+    let query = supabase
+      .from('lib_geographic_units')
+      .select(
+        'id, psgc_code, province_huc, city_mun_name, barangay_name, income_class, lgu_type, urban_rural_type, population_2024',
+      )
+      .order('province_huc', { ascending: true, nullsFirst: false })
+      .order('city_mun_name', { ascending: true, nullsFirst: false })
+      .order('barangay_name', { ascending: true, nullsFirst: false })
+
+    if (filters.province) {
+      query = query.eq('province_huc', filters.province)
+    }
+
+    if (filters.city) {
+      query = query.eq('city_mun_name', filters.city)
+    }
+
+    if (filters.barangay) {
+      query = query.eq('barangay_name', filters.barangay)
+    }
+
+    return query
+  })
+
+  const uniqueGeoRows = uniqueRowsBy(
+    geoRows,
+    (row) => row.psgc_code || `${row.province_huc}-${row.city_mun_name}-${row.barangay_name}`,
+  )
+  const level = filters.barangay ? 'barangay' : filters.city ? 'city' : 'province'
+  const barangayRows = uniqueGeoRows.filter((row) => normalizeOption(row.barangay_name))
+  const barangayCount = uniqueRowsBy(
+    barangayRows,
+    (row) => row.psgc_code || `${row.city_mun_name}-${row.barangay_name}`,
+  ).length
+  const municipalityCount = uniqueSorted(uniqueGeoRows.map((row) => row.city_mun_name)).length
+
+  if (level === 'barangay') {
+    const selectedBarangay = uniqueGeoRows.find(
+      (row) =>
+        normalizeText(row.barangay_name) === normalizeText(filters.barangay) &&
+        (!filters.city || normalizeText(row.city_mun_name) === normalizeText(filters.city)),
+    ) ?? uniqueGeoRows[0] ?? {}
+
+    return {
+      level,
+      cards: [
+        {
+          title: 'Population',
+          value: getLocationPopulation(selectedBarangay),
+          info: 'Population data is from year 2024.',
+        },
+        { title: 'Type', value: selectedBarangay.urban_rural_type || selectedBarangay.lgu_type || 'N/A' },
+        { title: 'PSGC Code', value: selectedBarangay.psgc_code || 'N/A' },
+      ],
+    }
+  }
+
+  if (level === 'city') {
+    const selectedCity = uniqueGeoRows.find(
+      (row) =>
+        normalizeText(row.city_mun_name) === normalizeText(filters.city) &&
+        isBlank(row.barangay_name),
+    ) ?? uniqueGeoRows[0] ?? {}
+
+    return {
+      level,
+      cards: [
+        {
+          title: 'Population',
+          value: getLocationPopulation(selectedCity, uniqueGeoRows),
+          info: 'Population data is from year 2024.',
+        },
+        { title: 'Income Class', value: selectedCity.income_class || getSelectedIncomeClass(uniqueGeoRows, filters) },
+        { title: 'No. of Barangays', value: barangayCount },
+      ],
+    }
+  }
+
+  const selectedProvince = uniqueGeoRows.find((row) => {
+    const lguType = normalizeText(row.lgu_type)
+
+    return (
+      normalizeText(row.province_huc) === normalizeText(filters.province) &&
+      isBlank(row.barangay_name) &&
+      (isBlank(row.city_mun_name) || lguType === 'province' || lguType === 'huc')
+    )
+  }) ?? uniqueGeoRows[0] ?? {}
+
+  return {
+    level,
+    cards: isHucProvinceOption(filters.province) ? [
+      {
+        title: 'Population',
+        value: getLocationPopulation(selectedProvince, uniqueGeoRows),
+        info: 'Population data is from year 2024.',
+      },
+      { title: 'Income Class', value: selectedProvince.income_class || getSelectedIncomeClass(uniqueGeoRows, filters) },
+      { title: 'No. of Barangays', value: barangayCount },
+    ] : [
+      {
+        title: 'Population',
+        value: getLocationPopulation(selectedProvince, uniqueGeoRows),
+        info: 'Population data is from year 2024.',
+      },
+      { title: 'Income Class', value: selectedProvince.income_class || getSelectedIncomeClass(uniqueGeoRows, filters) },
+      { title: 'No. of Municipality', value: municipalityCount },
+      { title: 'No. of Barangays', value: barangayCount },
+    ],
+  }
+}
+
+export async function getOverviewBFDPStats(filters = {}) {
+  const rows = await fetchAllPages(() => {
+    let query = supabase
+      .from('v_bfdp_details')
+      .select('id, province_huc, city_mun_name, barangay_name, year, quarter, status')
+    query = applyCommonFilters(query, filters)
+    return query
+  })
+  const level = filters.barangay ? 'barangay' : filters.city ? 'city' : 'province'
+  const statusCounts = getStatusCounts(rows)
+
+  if (level === 'barangay' && filters.quarter) {
+    return {
+      mode: 'status',
+      status: getLatestRecord(rows)?.status || 'N/A',
+    }
+  }
+
+  return {
+    mode: 'counts',
+    cards: [
+      { title: STATUS_LABELS.full, value: statusCounts.full },
+      { title: STATUS_LABELS.partial, value: statusCounts.partial },
+      { title: STATUS_LABELS.none, value: statusCounts.none },
+    ],
   }
 }
 
@@ -363,18 +552,7 @@ export async function getBFDPLocationStats(filters = {}) {
   const incomeClass = getSelectedIncomeClass(uniqueGeoRows, filters)
   const locationRow = uniqueGeoRows[0] ?? detailRows[0] ?? {}
 
-  const statusCounts = detailRows.reduce(
-    (counts, row) => {
-      const group = getStatusGroup(row.status)
-
-      if (group) {
-        counts[group] += 1
-      }
-
-      return counts
-    },
-    { full: 0, partial: 0, none: 0 },
-  )
+  const statusCounts = getStatusCounts(detailRows)
 
   const passedCount = detailRows.reduce(
     (sum, row) => sum + DOCUMENT_FIELDS.filter((field) => row[field.key] === true).length,
@@ -384,17 +562,7 @@ export async function getBFDPLocationStats(filters = {}) {
     (sum, row) => sum + DOCUMENT_FIELDS.filter((field) => row[field.key] === false).length,
     0,
   )
-  const latestRecord = [...detailRows].sort((left, right) => {
-    if ((right.year ?? 0) !== (left.year ?? 0)) {
-      return (right.year ?? 0) - (left.year ?? 0)
-    }
-
-    if ((right.quarter ?? 0) !== (left.quarter ?? 0)) {
-      return (right.quarter ?? 0) - (left.quarter ?? 0)
-    }
-
-    return (right.id ?? 0) - (left.id ?? 0)
-  })[0]
+  const latestRecord = getLatestRecord(detailRows)
 
   const level = filters.barangay ? 'barangay' : filters.city ? 'city' : 'province'
 

@@ -7,6 +7,8 @@ import {
   getBFDPScoreByProvince,
   getBFDPTable,
   getGeoOptions,
+  getOverviewBFDPStats,
+  getOverviewLocationStats,
 } from '../services/bfdpService'
 
 const QUERY_OPTIONS = {
@@ -24,6 +26,38 @@ export function useGeoOptions() {
   return useQuery({
     queryKey: ['geo-options'],
     queryFn: getGeoOptions,
+    ...QUERY_OPTIONS,
+  })
+}
+
+export function useOverviewLocationStats(filters) {
+  return useQuery({
+    queryKey: [
+      'overview-location-stats',
+      filters.province,
+      filters.city,
+      filters.barangay,
+    ],
+    queryFn: () => getOverviewLocationStats(filters),
+    enabled: hasLocationFilter(filters),
+    ...QUERY_OPTIONS,
+  })
+}
+
+export function useOverviewBFDPStats(filters, options = {}) {
+  const enabled = options.enabled ?? true
+
+  return useQuery({
+    queryKey: [
+      'overview-bfdp-stats',
+      filters.year,
+      filters.quarter,
+      filters.province,
+      filters.city,
+      filters.barangay,
+    ],
+    queryFn: () => getOverviewBFDPStats(filters),
+    enabled: enabled && hasLocationFilter(filters),
     ...QUERY_OPTIONS,
   })
 }

@@ -6,10 +6,19 @@ import SGLGPlaceholder from './pages/SGLGPlaceholder'
 
 export default function App() {
   const [activePage, setActivePage] = useState('overview')
+  const [bfdpInitialFilters, setBfdpInitialFilters] = useState(null)
+
+  const handleNavigate = (page, options = {}) => {
+    if (page === 'bfdp' && options.filters) {
+      setBfdpInitialFilters(options.filters)
+    }
+
+    setActivePage(page)
+  }
 
   const renderPage = () => {
     if (activePage === 'bfdp') {
-      return <BFDPDashboard />
+      return <BFDPDashboard initialFilters={bfdpInitialFilters} />
     }
 
     if (activePage === 'sglg') {
@@ -25,11 +34,11 @@ export default function App() {
       )
     }
 
-    return <Overview onNavigate={setActivePage} />
+    return <Overview onNavigate={handleNavigate} />
   }
 
   return (
-    <DashboardLayout activePage={activePage} onNavigate={setActivePage}>
+    <DashboardLayout activePage={activePage} onNavigate={handleNavigate}>
       {renderPage()}
     </DashboardLayout>
   )
