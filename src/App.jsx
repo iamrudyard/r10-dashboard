@@ -2,6 +2,7 @@ import { useState } from 'react'
 import DashboardLayout from './components/layout/DashboardLayout'
 import Overview from './pages/Overview'
 import BFDPDashboard from './pages/BFDPDashboard'
+import SGLGDashboard from './pages/SGLGDashboard'
 import SGLGPlaceholder from './pages/SGLGPlaceholder'
 
 export default function App() {
@@ -22,7 +23,7 @@ export default function App() {
     }
 
     if (activePage === 'sglg') {
-      return <SGLGPlaceholder />
+      return <SGLGDashboard />
     }
 
     if (activePage === 'future') {

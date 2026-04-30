@@ -162,6 +162,8 @@ export default function LocationFilters({
   onRefresh,
   refreshDisabled = false,
   isRefreshing = false,
+  includeBarangay = true,
+  includeQuarter = true,
   includeMonth = false,
 }) {
   const locations = geoOptions?.locations ?? []
@@ -201,10 +203,12 @@ export default function LocationFilters({
 
     if (key === 'provinceHuc') {
       nextFilters.cityMunName = ''
-      nextFilters.barangayName = ''
+      if (includeBarangay) {
+        nextFilters.barangayName = ''
+      }
     }
 
-    if (key === 'cityMunName') {
+    if (includeBarangay && key === 'cityMunName') {
       nextFilters.barangayName = ''
     }
 
@@ -228,9 +232,9 @@ export default function LocationFilters({
             onChange({
               provinceHuc: '',
               cityMunName: '',
-              barangayName: '',
               year: '',
-              quarter: '',
+              ...(includeBarangay ? { barangayName: '' } : {}),
+              ...(includeQuarter ? { quarter: '' } : {}),
               ...(includeMonth ? { month: '' } : {}),
             })
           }
@@ -254,7 +258,11 @@ export default function LocationFilters({
         </div>
       ) : null}
 
-      <div className={`grid gap-3 md:grid-cols-2 ${includeMonth ? 'xl:grid-cols-6' : 'xl:grid-cols-5'}`}>
+      <div
+        className={`grid gap-3 md:grid-cols-2 ${
+          includeMonth ? 'xl:grid-cols-6' : includeBarangay && includeQuarter ? 'xl:grid-cols-5' : 'xl:grid-cols-3'
+        }`}
+      >
         <SelectField
           label="Province/HUC"
           value={filters.provinceHuc}
@@ -277,13 +285,15 @@ export default function LocationFilters({
           onChange={(value) => updateFilter('cityMunName', value)}
         />
 
-        <SearchableSelectField
-          label="Barangay"
-          value={filters.barangayName}
-          options={barangayOptions}
-          placeholder="All Barangays"
-          onChange={(value) => updateFilter('barangayName', value)}
-        />
+        {includeBarangay ? (
+          <SearchableSelectField
+            label="Barangay"
+            value={filters.barangayName}
+            options={barangayOptions}
+            placeholder="All Barangays"
+            onChange={(value) => updateFilter('barangayName', value)}
+          />
+        ) : null}
 
         <SelectField label="Year" value={filters.year} onChange={(value) => updateFilter('year', value)}>
           <option value="">All Years</option>
@@ -294,19 +304,21 @@ export default function LocationFilters({
           ))}
         </SelectField>
 
-        <SelectField
-          label="Quarter"
-          value={filters.quarter}
-          disabled={Boolean(filters.month)}
-          onChange={(value) => updateFilter('quarter', value)}
-        >
-          <option value="">All Quarters</option>
-          {quarters.map((quarter) => (
-            <option key={quarter.value} value={quarter.value}>
-              {quarter.label}
-            </option>
-          ))}
-        </SelectField>
+        {includeQuarter ? (
+          <SelectField
+            label="Quarter"
+            value={filters.quarter}
+            disabled={Boolean(filters.month)}
+            onChange={(value) => updateFilter('quarter', value)}
+          >
+            <option value="">All Quarters</option>
+            {quarters.map((quarter) => (
+              <option key={quarter.value} value={quarter.value}>
+                {quarter.label}
+              </option>
+            ))}
+          </SelectField>
+        ) : null}
 
         {includeMonth ? (
           <SelectField
