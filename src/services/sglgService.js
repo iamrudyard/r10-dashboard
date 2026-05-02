@@ -26,6 +26,12 @@ const roundPercentage = (complete, total) => {
 
 const getGeo = (row = {}) => row.lib_geographic_units ?? {}
 
+const toNumber = (value) => {
+  const number = Number(value)
+
+  return Number.isFinite(number) ? number : null
+}
+
 async function fetchAllPages(buildQuery, pageSize = OPTION_PAGE_SIZE) {
   const rows = []
   let from = 0
@@ -80,6 +86,46 @@ function isSelectedProvinceHucRow(row, province) {
       lguType === 'huc' ||
       lguType.includes('highly urbanized'))
   )
+}
+
+function isProvinceHucPopulationRow(row) {
+  const geo = getGeo(row)
+  const provinceHuc = normalizeText(geo.province_huc)
+  const cityMunName = normalizeText(geo.city_mun_name)
+  const lguType = normalizeText(geo.lgu_type)
+
+  return (
+    isBlank(geo.city_mun_name) ||
+    cityMunName === provinceHuc ||
+    lguType === 'province' ||
+    lguType === 'huc' ||
+    lguType.includes('highly urbanized')
+  )
+}
+
+async function getProvinceHucPopulationTotal() {
+  const rows = await fetchAllPages(() =>
+    supabase
+      .from('lib_geographic_units')
+      .select('province_huc, population_2024')
+      .is('city_mun_name', null)
+      .is('barangay_name', null),
+  )
+
+  const populationByProvinceHuc = rows.reduce((totals, row) => {
+    const key = normalizeOption(row.province_huc)
+    const population = toNumber(row.population_2024)
+
+    if (key && population !== null && !totals.has(key)) {
+      totals.set(key, population)
+    }
+
+    return totals
+  }, new Map())
+
+  return populationByProvinceHuc.size
+    ? [...populationByProvinceHuc.values()].reduce((sum, population) => sum + population, 0)
+    : null
 }
 
 function filterRowsBySpecificLgu(rows, filters = {}) {
@@ -193,6 +239,21 @@ function buildAnalytics(rows) {
   const areaPassTotal = indicators.reduce((sum, indicator) => sum + indicator.pass, 0)
   const areaFailTotal = indicators.reduce((sum, indicator) => sum + indicator.fail, 0)
   const areaTotal = indicators.reduce((sum, indicator) => sum + indicator.total, 0)
+  const latestGeo = getGeo(latestRecord)
+  const populationByProvinceHuc = rows.reduce((totals, row) => {
+    const geo = getGeo(row)
+    const key = normalizeOption(geo.province_huc)
+    const population = toNumber(getGeo(row).population_2024)
+
+    if (key && population !== null && isProvinceHucPopulationRow(row) && !totals.has(key)) {
+      totals.set(key, population)
+    }
+
+    return totals
+  }, new Map())
+  const totalPopulation = populationByProvinceHuc.size
+    ? [...populationByProvinceHuc.values()].reduce((sum, population) => sum + population, 0)
+    : null
 
   return {
     totalRecords: rows.length,
@@ -201,6 +262,9 @@ function buildAnalytics(rows) {
     failedCount,
     noRatingCount: rows.length - passedCount - failedCount,
     latestOverallRating: latestRecord?.overall_rating || 'No Rating',
+    latestPopulation: toNumber(latestGeo.population_2024),
+    totalPopulation,
+    latestIncomeClass: latestGeo.income_class || 'N/A',
     areaPassTotal,
     areaFailTotal,
     overallPassRate: roundPercentage(passedCount, passedCount + failedCount),
@@ -250,15 +314,22 @@ export async function getSGLGGeoOptions() {
 }
 
 export async function getSGLGDashboard(filters = {}) {
-  const rows = await fetchAllPages(() => {
-    let query = getRowsQuery()
-    query = applySGLGFilters(query, filters)
-    return query.order('assessment_year', { ascending: false, nullsFirst: false })
-  })
+  const [rows, provinceHucPopulationTotal] = await Promise.all([
+    fetchAllPages(() => {
+      let query = getRowsQuery()
+      query = applySGLGFilters(query, filters)
+      return query.order('assessment_year', { ascending: false, nullsFirst: false })
+    }),
+    !filters.province && !filters.city ? getProvinceHucPopulationTotal() : Promise.resolve(null),
+  ])
 
   const sortedRows = sortRowsByLocation(filterRowsBySpecificLgu(rows, filters))
+  const analytics = buildAnalytics(sortedRows)
 
-  return buildAnalytics(sortedRows)
+  return {
+    ...analytics,
+    totalPopulation: provinceHucPopulationTotal ?? analytics.totalPopulation,
+  }
 }
 
 export async function getSGLGTable(filters = {}) {

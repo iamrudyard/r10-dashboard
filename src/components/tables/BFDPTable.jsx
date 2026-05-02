@@ -17,24 +17,26 @@ const normalizeText = (value) => (typeof value === 'string' ? value.trim().toLow
 
 const isHucProvinceOption = (value) => HUC_PROVINCE_OPTIONS.includes(normalizeText(value))
 
-const getGeoValue = (record, key) => {
+const getGeoLabelPart = (record, key) => {
   const value = record[key] ?? record.lib_geographic_units?.[key]
 
-  if (value) {
-    return value
-  }
+  return typeof value === 'string' ? value.trim() : value
+}
 
-  const provinceHuc = record.province_huc ?? record.lib_geographic_units?.province_huc
+const getBFDPRecordLabel = (record) => {
+  const provinceHuc = getGeoLabelPart(record, 'province_huc')
+  const cityMunName = getGeoLabelPart(record, 'city_mun_name')
+  const barangayName = getGeoLabelPart(record, 'barangay_name')
+  const isHuc = isHucProvinceOption(provinceHuc)
+  const parts = isHuc
+    ? [provinceHuc, barangayName]
+    : [provinceHuc, cityMunName, barangayName]
 
-  if (key === 'city_mun_name' && isHucProvinceOption(provinceHuc)) {
-    return provinceHuc
-  }
-
-  return 'Unspecified'
+  return parts.filter(Boolean).join(', ') || 'Unspecified'
 }
 
 const badgeClassName =
-  'border px-2 py-0.5 text-xs font-medium leading-4 shadow-none ring-1 ring-inset'
+  'border px-1.5 py-0.5 text-[11px] font-medium leading-4 shadow-none ring-1 ring-inset xl:px-2 xl:text-xs'
 
 const badgeColorClasses = {
   green: '!border-[#069c56] !bg-[#069c56] !text-white !ring-[#069c56]/20',
@@ -66,33 +68,19 @@ const getStatusBadgeClassName = (status) =>
 
 const baseColumns = [
   {
-    key: 'province_huc',
-    label: 'Province/HUC',
-    className: 'whitespace-normal break-words px-2 py-2 text-sm leading-snug',
-    headerClassName: 'whitespace-normal break-words px-2 py-2 text-sm leading-snug',
-    getValue: (record) => getGeoValue(record, 'province_huc'),
-  },
-  {
-    key: 'city_mun_name',
-    label: 'City/Municipality',
-    className: 'whitespace-normal break-words px-2 py-2 text-sm leading-snug',
-    headerClassName: 'whitespace-normal break-words px-2 py-2 text-sm leading-snug',
-    getValue: (record) => getGeoValue(record, 'city_mun_name'),
-  },
-  {
-    key: 'barangay_name',
-    label: 'Barangay',
-    className: 'whitespace-normal break-words px-2 py-2 text-sm leading-snug',
-    headerClassName: 'whitespace-normal break-words px-2 py-2 text-sm leading-snug',
-    getValue: (record) => getGeoValue(record, 'barangay_name'),
+    key: 'lgu',
+    label: 'LGU',
+    className: 'whitespace-normal break-words px-1.5 py-2 text-xs leading-snug xl:px-2 xl:text-sm',
+    headerClassName: 'whitespace-normal break-words px-1.5 py-2 text-xs leading-snug xl:px-2 xl:text-sm',
+    getValue: getBFDPRecordLabel,
   },
 ]
 
 const documentColumns = DOCUMENT_FIELDS.map((field) => ({
   key: field.key,
   label: field.label,
-  className: 'px-1 py-2 text-center',
-  headerClassName: 'whitespace-normal break-words px-1 py-2 text-center text-xs leading-tight',
+  className: 'px-0.5 py-2 text-center xl:px-1',
+  headerClassName: 'whitespace-normal break-words px-0.5 py-2 text-center text-[11px] leading-tight xl:px-1 xl:text-xs',
   getValue: (record) => record[field.key],
   render: (record) => <BooleanBadge value={record[field.key]} />,
 }))
@@ -101,32 +89,32 @@ const metricColumns = [
   {
     key: 'score',
     label: 'Score',
-    className: 'px-1 py-2 text-center text-sm',
-    headerClassName: 'whitespace-normal px-1 py-2 text-center text-sm leading-snug',
+    className: 'px-0.5 py-2 text-center text-xs xl:px-1 xl:text-sm',
+    headerClassName: 'whitespace-normal px-0.5 py-2 text-center text-xs leading-snug xl:px-1 xl:text-sm',
     getValue: (record) => record.score,
     render: (record) => record.score ?? 'N/A',
   },
   {
     key: 'quarter',
     label: 'Quarter',
-    className: 'px-1 py-2 text-center text-sm',
-    headerClassName: 'whitespace-normal px-1 py-2 text-center text-sm leading-snug',
+    className: 'px-0.5 py-2 text-center text-xs xl:px-1 xl:text-sm',
+    headerClassName: 'whitespace-normal px-0.5 py-2 text-center text-xs leading-snug xl:px-1 xl:text-sm',
     getValue: (record) => record.quarter,
     render: (record) => (record.quarter ? `Q${record.quarter}` : 'N/A'),
   },
   {
     key: 'year',
     label: 'Year',
-    className: 'px-1 py-2 text-center text-sm',
-    headerClassName: 'whitespace-normal px-1 py-2 text-center text-sm leading-snug',
+    className: 'px-0.5 py-2 text-center text-xs xl:px-1 xl:text-sm',
+    headerClassName: 'whitespace-normal px-0.5 py-2 text-center text-xs leading-snug xl:px-1 xl:text-sm',
     getValue: (record) => record.year,
     render: (record) => record.year ?? 'N/A',
   },
   {
     key: 'status',
     label: 'Status',
-    className: 'whitespace-normal break-words px-2 py-2',
-    headerClassName: 'whitespace-normal break-words px-2 py-2 text-sm leading-snug',
+    className: 'whitespace-normal break-words px-1.5 py-2 xl:px-2',
+    headerClassName: 'whitespace-normal break-words px-1.5 py-2 text-xs leading-snug xl:px-2 xl:text-sm',
     getValue: (record) => record.status || 'No Status',
     render: (record) => (
       <Badge
@@ -268,18 +256,16 @@ export default function BFDPTable({
       </div>
 
       <div className="w-full overflow-hidden">
-        <Table className="w-full table-fixed text-sm leading-snug">
+        <Table className="w-full table-fixed text-xs leading-snug xl:text-sm">
           <colgroup>
-            <col className="w-[10%]" />
-            <col className="w-[11%]" />
-            <col className="w-[10%]" />
+            <col className="w-[23%]" />
             {DOCUMENT_FIELDS.map((field) => (
-              <col key={field.key} className="w-[4.8%]" />
+              <col key={field.key} className="w-[5.4%]" />
             ))}
-            <col className="w-[4.5%]" />
             <col className="w-[5%]" />
             <col className="w-[5%]" />
-            <col className="w-[11.3%]" />
+            <col className="w-[5%]" />
+            <col className="w-[13.4%]" />
           </colgroup>
           <TableHead>
             <TableRow>
