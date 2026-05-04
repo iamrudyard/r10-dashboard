@@ -1,5 +1,9 @@
 import { supabase } from '../lib/supabaseClient'
-import { SGLG_FIELD_KEYS, SGLG_INDICATORS } from '../utils/sglgIndicators'
+import {
+  SGLG_FIELD_KEYS,
+  SGLG_INDICATORS,
+  getSGLGRequirementStats,
+} from '../utils/sglgIndicators'
 
 const OPTION_PAGE_SIZE = 1000
 const DEFAULT_PAGE_SIZE = 25
@@ -172,6 +176,7 @@ function buildAnalytics(rows) {
     const subIndicators = indicator.fields.map((field) => ({
       ...field,
       ...getFieldStats(rows, field.key),
+      requirement: getSGLGRequirementStats(rows, indicator.key, field.key),
     }))
     const subIndicatorAverage = subIndicators.length
       ? Number(

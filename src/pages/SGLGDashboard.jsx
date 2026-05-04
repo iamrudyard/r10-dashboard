@@ -150,6 +150,34 @@ function SGLGRatingDonut({ statusCounts }) {
 
 const getAxisLimit = (values) => Math.max(1, ...values.map((value) => Math.abs(value)))
 
+function getRequirementMarker(requirement) {
+  if (!requirement) {
+    return ''
+  }
+
+  const label = requirement.label === 'Required' ? 'Req' : requirement.label
+
+  if (requirement.isUniversal) {
+    return label
+  }
+
+  return `${label} ${requirement.count}/${requirement.total}`
+}
+
+function getRequirementLabels(fields) {
+  return [
+    ...new Set(
+      fields
+        .map((field) => getRequirementMarker(field.requirement))
+        .filter(Boolean),
+    ),
+  ]
+}
+
+function getRequirementNameLabel(field) {
+  return field.requirement ? `${field.label} *` : field.label
+}
+
 function groupIndicatorsBySubIndicatorCount(indicators) {
   const groups = indicators.reduce((result, indicator) => {
     const count = indicator.subIndicators.length
@@ -291,6 +319,7 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
   const axisLimit = showPercentages ? 100 : getAxisLimit([...failValues, ...passValues])
   const subIndicatorsPassed = indicator.subIndicators.reduce((sum, field) => sum + field.pass, 0)
   const subIndicatorsFailed = indicator.subIndicators.reduce((sum, field) => sum + field.fail, 0)
+  const requirementLabels = getRequirementLabels(indicator.subIndicators)
 
   const options = {
     chart: {
@@ -345,12 +374,17 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
         const value = isFail ? Math.abs(failValues[dataPointIndex]) : passValues[dataPointIndex]
         const valueLabel = showPercentages ? `${value}%` : `${value} value`
         const totalLabel = showPercentages ? 'LGUs' : 'assessment value(s)'
+        const requirement = field.requirement
+        const requirementLine = requirement
+          ? `<div style="margin-top: 8px; color: #0369a1; font-weight: 700;">${getRequirementMarker(requirement)}: ${requirement.description}</div>`
+          : ''
 
         return `
           <div style="padding: 10px 12px; font-size: 13px; color: #0f172a;">
             <div style="font-weight: 700;">${field.label}</div>
             <div style="margin-top: 4px; color: #475569;">${isFail ? 'Fail' : 'Pass'}: ${valueLabel}</div>
             <div style="margin-top: 8px; font-weight: 700;">${count} of ${field.total} ${totalLabel}</div>
+            ${requirementLine}
           </div>
         `
       },
@@ -365,6 +399,11 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
           <p className="mt-1 text-xs font-medium text-slate-500">
             Sub-indicators: {subIndicatorsPassed} passed, {subIndicatorsFailed} failed
           </p>
+          {requirementLabels.length ? (
+            <p className="mt-2 text-xs font-semibold text-sky-800">
+              * Required to pass{requirementLabels.some((label) => label.startsWith('Any')) ? '; Health items marked * count toward the required pool.' : '.'}
+            </p>
+          ) : null}
         </div>
         <div className="rounded-lg border border-civic-100 bg-civic-50 px-3 py-1.5 text-right">
           {showPercentages ? (
@@ -378,7 +417,7 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
         </div>
       </div>
       <Chart
-        options={{ ...options, xaxis: { ...options.xaxis, categories: indicator.subIndicators.map((field) => field.label) } }}
+        options={{ ...options, xaxis: { ...options.xaxis, categories: indicator.subIndicators.map(getRequirementNameLabel) } }}
         series={[
           { name: showPercentages ? 'Fail Rate' : 'Fail Value', data: failValues },
           { name: showPercentages ? 'Pass Rate' : 'Pass Value', data: passValues },
