@@ -1,7 +1,7 @@
 import { Card, Metric, Text } from '@tremor/react'
 import { useState } from 'react'
 
-export default function SummaryCard({ title, value, note, info }) {
+export default function SummaryCard({ title, value, note, info, valueClassName = 'text-slate-900' }) {
   const [showInfo, setShowInfo] = useState(false)
 
   return (
@@ -19,7 +19,7 @@ export default function SummaryCard({ title, value, note, info }) {
           </button>
         ) : null}
       </div>
-      <Metric className="mt-2 text-2xl font-semibold text-slate-900">{value}</Metric>
+      <Metric className={`mt-2 text-2xl font-semibold ${valueClassName}`}>{value}</Metric>
       {showInfo && info ? (
         <div className="absolute left-5 top-10 z-20 max-w-56 rounded-lg border border-civic-100 bg-white px-3 py-2 text-xs font-medium text-civic-800 shadow-xl">
           {info}
