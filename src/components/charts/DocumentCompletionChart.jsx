@@ -2,7 +2,12 @@ import Chart from 'react-apexcharts'
 import { Card } from '@tremor/react'
 import ChartEmptyState from './ChartEmptyState'
 
-export default function DocumentCompletionChart({ documents, title = 'BFDP Document Completion' }) {
+export default function DocumentCompletionChart({
+  documents,
+  title = 'BFDP Document Completion',
+  positiveLabel = 'Yes',
+  negativeLabel = 'No',
+}) {
   if (!documents.length) {
     return <ChartEmptyState title={title} />
   }
@@ -53,11 +58,11 @@ export default function DocumentCompletionChart({ documents, title = 'BFDP Docum
             <div style="margin-top: 4px; color: #475569;">${document.percentage}% completion</div>
             <div style="margin-top: 8px; display: grid; gap: 4px;">
               <div style="display: flex; justify-content: space-between; gap: 18px; color: #047857; font-weight: 700;">
-                <span>Yes</span>
+                <span>${positiveLabel}</span>
                 <span>${document.complete}</span>
               </div>
               <div style="display: flex; justify-content: space-between; gap: 18px; color: #dc2626; font-weight: 700;">
-                <span>No</span>
+                <span>${negativeLabel}</span>
                 <span>${document.missing}</span>
               </div>
             </div>

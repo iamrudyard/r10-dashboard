@@ -260,7 +260,13 @@ export default function LocationFilters({
 
       <div
         className={`grid gap-3 md:grid-cols-2 ${
-          includeMonth ? 'xl:grid-cols-6' : includeBarangay && includeQuarter ? 'xl:grid-cols-5' : 'xl:grid-cols-3'
+          includeMonth
+            ? 'xl:grid-cols-6'
+            : includeBarangay && includeQuarter
+              ? 'xl:grid-cols-5'
+              : includeQuarter
+                ? 'xl:grid-cols-4'
+                : 'xl:grid-cols-3'
         }`}
       >
         <SelectField

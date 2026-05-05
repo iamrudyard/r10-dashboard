@@ -7,6 +7,14 @@ const fallbackPalette = ['#475569', '#7c3aed', '#dc2626']
 const getStatusColor = (status = '', index = 0) => {
   const normalizedStatus = status.toLowerCase()
 
+  if (
+    normalizedStatus.includes('non compliance') ||
+    normalizedStatus.includes('non-compliance') ||
+    normalizedStatus.includes('notice of non')
+  ) {
+    return '#d3212c'
+  }
+
   if (normalizedStatus.includes('full')) {
     return '#069c56'
   }
@@ -15,8 +23,12 @@ const getStatusColor = (status = '', index = 0) => {
     return '#ff980e'
   }
 
-  if (normalizedStatus.includes('none') || normalizedStatus.includes('non')) {
+  if (normalizedStatus.includes('none')) {
     return '#2563eb'
+  }
+
+  if (normalizedStatus.includes('compliance') || normalizedStatus.includes('compliant')) {
+    return '#069c56'
   }
 
   return fallbackPalette[index % fallbackPalette.length]

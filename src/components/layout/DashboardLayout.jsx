@@ -6,6 +6,7 @@ const titles = {
   overview: 'Overview',
   bfdp: 'Barangay Full Disclosure Policy',
   skfpd: 'SK Full Public Disclosure',
+  ltrpp: 'Local Public Transport Route Plan Preparation',
   sglg: 'Seal of Good Local Governance',
   future: 'Future Reports',
 }

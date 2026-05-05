@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import SummaryCard from '../components/cards/SummaryCard'
 import LocationFilters from '../components/filters/LocationFilters'
 import { useGeoOptions, useOverviewBFDPStats, useOverviewLocationStats } from '../hooks/useBFDPQueries'
+import { useOverviewLTRPPStats } from '../hooks/useLTRPPQueries'
 import { useOverviewSKFPDStats } from '../hooks/useSKFPDQueries'
 import { useSGLGDashboard } from '../hooks/useSGLGQueries'
 
@@ -30,6 +31,15 @@ const reportModules = [
     id: 'skfpd',
     title: 'SKFPD',
     description: 'SK Full Public Disclosure',
+    frequency: 'Quarterly',
+    status: 'Live',
+    color: 'emerald',
+    periods: ['quarter'],
+  },
+  {
+    id: 'ltrpp',
+    title: 'LPTRPP',
+    description: 'Local Public Transport Route Plan Preparation',
     frequency: 'Quarterly',
     status: 'Live',
     color: 'emerald',
@@ -92,6 +102,15 @@ function getQuarterlyFilterPayload(filters) {
   }
 }
 
+function getLTRPPFilterPayload(filters) {
+  return {
+    provinceHuc: filters.provinceHuc,
+    cityMunName: filters.cityMunName,
+    year: '2026',
+    quarter: filters.quarter,
+  }
+}
+
 function getAnnualFilterPayload(filters) {
   return {
     provinceHuc: filters.provinceHuc,
@@ -114,11 +133,16 @@ function formatRating(value) {
   return 'No Rating'
 }
 
-function QuarterlyComplianceCardStats({ stats, isLoading, isApplicable }) {
+function QuarterlyComplianceCardStats({
+  stats,
+  isLoading,
+  isApplicable,
+  notApplicableMessage = 'Not applicable for Month filter.',
+}) {
   if (!isApplicable) {
     return (
       <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
-        Not applicable for Month filter.
+        {notApplicableMessage}
       </div>
     )
   }
@@ -252,6 +276,15 @@ export default function Overview({ onNavigate }) {
     }),
     [filters.year, filters.quarter, filters.provinceHuc, filters.cityMunName, filters.barangayName],
   )
+  const ltrppStatsFilters = useMemo(
+    () => ({
+      year: '2026',
+      quarter: filters.quarter,
+      province: filters.provinceHuc,
+      city: filters.cityMunName,
+    }),
+    [filters.quarter, filters.provinceHuc, filters.cityMunName],
+  )
   const sglgStatsFilters = useMemo(
     () => ({
       year: filters.year,
@@ -265,6 +298,7 @@ export default function Overview({ onNavigate }) {
   )
   const isBFDPApplicable = !filters.month
   const isSKFPDApplicable = !filters.month
+  const isLTRPPApplicable = !filters.month
   const isSGLGApplicable = !filters.month && !filters.quarter && !filters.barangayName
 
   const geoOptionsQuery = useGeoOptions()
@@ -275,6 +309,10 @@ export default function Overview({ onNavigate }) {
   })
   const skfpdStatsQuery = useOverviewSKFPDStats(skfpdStatsFilters, {
     enabled: isSKFPDApplicable,
+    requireLocation: false,
+  })
+  const ltrppStatsQuery = useOverviewLTRPPStats(ltrppStatsFilters, {
+    enabled: isLTRPPApplicable,
     requireLocation: false,
   })
   const sglgStatsQuery = useSGLGDashboard(sglgStatsFilters, {
@@ -288,7 +326,7 @@ export default function Overview({ onNavigate }) {
 
     return {
       ...geoOptionsQuery.data,
-      years: [...new Set([2024, ...(geoOptionsQuery.data.years ?? [])])].sort((a, b) => b - a),
+      years: [...new Set([2026, 2024, ...(geoOptionsQuery.data.years ?? [])])].sort((a, b) => b - a),
     }
   }, [geoOptionsQuery.data])
 
@@ -297,6 +335,7 @@ export default function Overview({ onNavigate }) {
     queryClient.invalidateQueries({ queryKey: ['overview-location-stats'] })
     queryClient.invalidateQueries({ queryKey: ['overview-bfdp-stats'] })
     queryClient.invalidateQueries({ queryKey: ['overview-skfpd-stats'] })
+    queryClient.invalidateQueries({ queryKey: ['overview-ltrpp-stats'] })
     queryClient.invalidateQueries({ queryKey: ['sglg-dashboard'] })
   }
 
@@ -314,6 +353,7 @@ export default function Overview({ onNavigate }) {
           locationStatsQuery.isFetching ||
           bfdpStatsQuery.isFetching ||
           skfpdStatsQuery.isFetching ||
+          ltrppStatsQuery.isFetching ||
           sglgStatsQuery.isFetching
         }
         includeMonth
@@ -344,7 +384,7 @@ export default function Overview({ onNavigate }) {
         </section>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {reportModules.map((report) => {
           const reportState = getReportState(report, filters)
 
@@ -357,11 +397,32 @@ export default function Overview({ onNavigate }) {
                 </div>
                 <Badge color={reportState.color}>{reportState.label}</Badge>
               </div>
-              {report.id === 'bfdp' || report.id === 'skfpd' ? (
+              {report.id === 'bfdp' || report.id === 'skfpd' || report.id === 'ltrpp' ? (
                 <QuarterlyComplianceCardStats
-                  stats={report.id === 'bfdp' ? bfdpStatsQuery.data : skfpdStatsQuery.data}
-                  isLoading={report.id === 'bfdp' ? bfdpStatsQuery.isLoading : skfpdStatsQuery.isLoading}
-                  isApplicable={reportState.isApplicable}
+                  stats={
+                    report.id === 'bfdp'
+                      ? bfdpStatsQuery.data
+                      : report.id === 'skfpd'
+                        ? skfpdStatsQuery.data
+                        : ltrppStatsQuery.data
+                  }
+                  isLoading={
+                    report.id === 'bfdp'
+                      ? bfdpStatsQuery.isLoading
+                      : report.id === 'skfpd'
+                        ? skfpdStatsQuery.isLoading
+                        : ltrppStatsQuery.isLoading
+                  }
+                  isApplicable={
+                    report.id === 'ltrpp'
+                      ? reportState.isApplicable && isLTRPPApplicable
+                      : reportState.isApplicable
+                  }
+                  notApplicableMessage={
+                    report.id === 'ltrpp'
+                      ? 'Not applicable for Month filter.'
+                      : 'Not applicable for Month filter.'
+                  }
                 />
               ) : null}
               {report.id === 'sglg' ? (
@@ -384,6 +445,16 @@ export default function Overview({ onNavigate }) {
                     type="button"
                     onClick={() => onNavigate(report.id, { filters: getQuarterlyFilterPayload(filters) })}
                     disabled={!reportState.isApplicable}
+                    className="rounded-lg bg-civic-700 px-4 py-2 text-sm font-semibold text-white hover:bg-civic-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    Open
+                  </button>
+                ) : null}
+                {report.id === 'ltrpp' ? (
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('ltrpp', { filters: getLTRPPFilterPayload(filters) })}
+                    disabled={!reportState.isApplicable || !isLTRPPApplicable}
                     className="rounded-lg bg-civic-700 px-4 py-2 text-sm font-semibold text-white hover:bg-civic-600 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     Open
