@@ -4,8 +4,9 @@ import Sidebar from './Sidebar'
 
 const titles = {
   overview: 'Overview',
-  bfdp: 'BFDP Monitoring',
-  sglg: 'SGLG Monitoring',
+  bfdp: 'Barangay Full Disclosure Policy',
+  skfpd: 'SK Full Public Disclosure',
+  sglg: 'Seal of Good Local Governance',
   future: 'Future Reports',
 }
 

@@ -13,7 +13,7 @@ function ChartTitle({ selectedLguPath }) {
   )
 }
 
-export default function QuarterlyTrendChart({ data, selectedYear, selectedLguPath }) {
+export default function QuarterlyTrendChart({ data, selectedYear, selectedLguPath, maxScore = 9 }) {
   const seriesData = data.map((item) => item.averageScore)
   const hasData = seriesData.some((value) => value !== null)
 
@@ -52,7 +52,7 @@ export default function QuarterlyTrendChart({ data, selectedYear, selectedLguPat
     },
     yaxis: {
       min: 0,
-      max: 9,
+      max: maxScore,
       tickAmount: 3,
       forceNiceScale: false,
       labels: {

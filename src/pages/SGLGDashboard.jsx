@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Chart from 'react-apexcharts'
 import {
   Badge,
@@ -193,8 +193,57 @@ function getRequirementLabels(fields) {
   ]
 }
 
-function getRequirementNameLabel(field) {
-  return field.requirement ? `${field.label} *` : field.label
+function getRequirementMarkerColor(field) {
+  if (!field.requirement) {
+    return null
+  }
+
+  return field.requirement.kind === 'pool' ? '#069c56' : '#d3212c'
+}
+
+function getRequirementNote(indicator, fields) {
+  if (!fields.some((field) => field.requirement)) {
+    return ''
+  }
+
+  if (['fin', 'drrm', 'soc'].includes(indicator.key)) {
+    return 'Need to PASS all with *, to PASS in this Area.'
+  }
+
+  if (indicator.key === 'health') {
+    return '* in red is required to pass. * in green counts toward the Any 4/Any 6 items to pass.'
+  }
+
+  return '* Required to pass.'
+}
+
+function applyRequiredAxisMarkers(chartElement, fields) {
+  const labelNodes = chartElement?.querySelectorAll('.apexcharts-yaxis-label')
+
+  if (!labelNodes?.length) {
+    return
+  }
+
+  labelNodes.forEach((labelNode, index) => {
+    const field = fields[index]
+    const markerColor = getRequirementMarkerColor(field)
+
+    while (labelNode.firstChild) {
+      labelNode.removeChild(labelNode.firstChild)
+    }
+
+    labelNode.appendChild(document.createTextNode(field?.label ?? ''))
+
+    if (!markerColor) {
+      return
+    }
+
+    const markerNode = document.createElementNS('http://www.w3.org/2000/svg', 'tspan')
+    markerNode.textContent = ' *'
+    markerNode.setAttribute('fill', markerColor)
+    markerNode.setAttribute('font-weight', '800')
+    labelNode.appendChild(markerNode)
+  })
 }
 
 function groupIndicatorsBySubIndicatorCount(indicators) {
@@ -340,12 +389,17 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
   const subIndicatorsPassed = indicator.subIndicators.reduce((sum, field) => sum + field.pass, 0)
   const subIndicatorsFailed = indicator.subIndicators.reduce((sum, field) => sum + field.fail, 0)
   const requirementLabels = getRequirementLabels(indicator.subIndicators)
+  const requirementNote = getRequirementNote(indicator, indicator.subIndicators)
 
   const options = {
     chart: {
       toolbar: { show: false },
       fontFamily: 'Aptos, Segoe UI, sans-serif',
       stacked: true,
+      events: {
+        mounted: (chartContext) => applyRequiredAxisMarkers(chartContext.el, indicator.subIndicators),
+        updated: (chartContext) => applyRequiredAxisMarkers(chartContext.el, indicator.subIndicators),
+      },
     },
     colors: ['#d3212c', '#2f7d64'],
     plotOptions: {
@@ -422,7 +476,7 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
           </p>
           {requirementLabels.length ? (
             <p className="mt-2 text-xs font-semibold text-sky-800">
-              * Required to pass{requirementLabels.some((label) => label.startsWith('Any')) ? '; Health items marked * count toward the required pool.' : '.'}
+              {requirementNote}
             </p>
           ) : null}
         </div>
@@ -438,7 +492,7 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
         </div>
       </div>
       <Chart
-        options={{ ...options, xaxis: { ...options.xaxis, categories: indicator.subIndicators.map(getRequirementNameLabel) } }}
+        options={{ ...options, xaxis: { ...options.xaxis, categories: indicator.subIndicators.map((field) => field.label) } }}
         series={[
           { name: showPercentages ? 'Fail Rate' : 'Fail Value', data: failValues },
           { name: showPercentages ? 'Pass Rate' : 'Pass Value', data: passValues },
@@ -558,11 +612,23 @@ function SGLGTable({ records, totalRecords, page, pageSize, onPageChange, onPage
   )
 }
 
-export default function SGLGDashboard() {
+export default function SGLGDashboard({ initialFilters }) {
   const queryClient = useQueryClient()
-  const [filters, setFilters] = useState(defaultFilters)
+  const normalizedInitialFilters = useMemo(
+    () => ({
+      ...defaultFilters,
+      ...(initialFilters ?? {}),
+    }),
+    [initialFilters],
+  )
+  const [filters, setFilters] = useState(normalizedInitialFilters)
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(25)
+
+  useEffect(() => {
+    setFilters(normalizedInitialFilters)
+    setPage(0)
+  }, [normalizedInitialFilters])
 
   const queryFilters = useMemo(
     () => ({

@@ -4,6 +4,8 @@ import { useQueryClient } from '@tanstack/react-query'
 import SummaryCard from '../components/cards/SummaryCard'
 import LocationFilters from '../components/filters/LocationFilters'
 import { useGeoOptions, useOverviewBFDPStats, useOverviewLocationStats } from '../hooks/useBFDPQueries'
+import { useOverviewSKFPDStats } from '../hooks/useSKFPDQueries'
+import { useSGLGDashboard } from '../hooks/useSGLGQueries'
 
 const initialFilters = {
   provinceHuc: '',
@@ -25,13 +27,22 @@ const reportModules = [
     periods: ['quarter'],
   },
   {
+    id: 'skfpd',
+    title: 'SKFPD',
+    description: 'SK Full Public Disclosure',
+    frequency: 'Quarterly',
+    status: 'Live',
+    color: 'emerald',
+    periods: ['quarter'],
+  },
+  {
     id: 'sglg',
     title: 'SGLG',
     description: 'Seal of Good Local Governance',
     frequency: 'Annual',
-    status: 'Reserved',
-    color: 'amber',
-    periods: [],
+    status: 'Live',
+    color: 'emerald',
+    periods: ['annual'],
   },
   {
     id: 'future',
@@ -71,7 +82,7 @@ function SelectionState() {
   )
 }
 
-function getBFDPFilterPayload(filters) {
+function getQuarterlyFilterPayload(filters) {
   return {
     provinceHuc: filters.provinceHuc,
     cityMunName: filters.cityMunName,
@@ -81,15 +92,29 @@ function getBFDPFilterPayload(filters) {
   }
 }
 
-function BFDPCardStats({ stats, isLoading, isApplicable, hasSelectedLocation }) {
-  if (!hasSelectedLocation) {
-    return (
-      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
-        Select a location to view compliance values.
-      </div>
-    )
+function getAnnualFilterPayload(filters) {
+  return {
+    provinceHuc: filters.provinceHuc,
+    cityMunName: filters.cityMunName,
+    year: filters.year,
+  }
+}
+
+function formatRating(value) {
+  const normalized = typeof value === 'string' ? value.toLowerCase() : ''
+
+  if (normalized === 'passed') {
+    return 'Passed'
   }
 
+  if (normalized === 'failed') {
+    return 'Failed'
+  }
+
+  return 'No Rating'
+}
+
+function QuarterlyComplianceCardStats({ stats, isLoading, isApplicable }) {
   if (!isApplicable) {
     return (
       <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
@@ -138,6 +163,63 @@ function BFDPCardStats({ stats, isLoading, isApplicable, hasSelectedLocation }) 
   )
 }
 
+function SGLGCardStats({ stats, isLoading, isApplicable, isSelectedLgu }) {
+  if (!isApplicable) {
+    return (
+      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+        Not applicable for Barangay, Quarter, or Month filter.
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        {['Passed', 'Failed', 'Rate'].map((title) => (
+          <div key={title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              {title}
+            </div>
+            <div className="mt-1 text-sm font-semibold text-slate-900">Loading...</div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (!stats?.totalRecords) {
+    return (
+      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+        No SGLG data found for the selected filters.
+      </div>
+    )
+  }
+
+  const cards = isSelectedLgu
+    ? [
+        { title: 'Overall', value: formatRating(stats.latestOverallRating) },
+        { title: 'Area Passed', value: stats.areaPassTotal },
+        { title: 'Area Failed', value: stats.areaFailTotal },
+      ]
+    : [
+        { title: 'PASSED', value: stats.passedCount },
+        { title: 'FAILED', value: stats.failedCount },
+      ]
+
+  return (
+    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      {cards.map((card) => (
+        <div key={card.title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            {card.title}
+          </div>
+          <div className="mt-1 text-sm font-semibold text-slate-900">{card.value}</div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function Overview({ onNavigate }) {
   const queryClient = useQueryClient()
   const [filters, setFilters] = useState(initialFilters)
@@ -160,20 +242,52 @@ export default function Overview({ onNavigate }) {
     }),
     [filters.year, filters.quarter, filters.provinceHuc, filters.cityMunName, filters.barangayName],
   )
+  const skfpdStatsFilters = useMemo(
+    () => ({
+      year: filters.year,
+      quarter: filters.quarter,
+      province: filters.provinceHuc,
+      city: filters.cityMunName,
+      barangay: filters.barangayName,
+    }),
+    [filters.year, filters.quarter, filters.provinceHuc, filters.cityMunName, filters.barangayName],
+  )
+  const sglgStatsFilters = useMemo(
+    () => ({
+      year: filters.year,
+      province: filters.provinceHuc,
+      city: filters.cityMunName,
+    }),
+    [filters.year, filters.provinceHuc, filters.cityMunName],
+  )
   const hasSelectedLocation = Boolean(
     locationStatsFilters.province || locationStatsFilters.city || locationStatsFilters.barangay,
   )
   const isBFDPApplicable = !filters.month
+  const isSKFPDApplicable = !filters.month
+  const isSGLGApplicable = !filters.month && !filters.quarter && !filters.barangayName
 
   const geoOptionsQuery = useGeoOptions()
   const locationStatsQuery = useOverviewLocationStats(locationStatsFilters)
-  const bfdpStatsQuery = useOverviewBFDPStats(bfdpStatsFilters, { enabled: isBFDPApplicable })
+  const bfdpStatsQuery = useOverviewBFDPStats(bfdpStatsFilters, {
+    enabled: isBFDPApplicable,
+    requireLocation: false,
+  })
+  const skfpdStatsQuery = useOverviewSKFPDStats(skfpdStatsFilters, {
+    enabled: isSKFPDApplicable,
+    requireLocation: false,
+  })
+  const sglgStatsQuery = useSGLGDashboard(sglgStatsFilters, {
+    enabled: isSGLGApplicable,
+  })
   const locationCards = locationStatsQuery.data?.cards ?? []
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['geo-options'] })
     queryClient.invalidateQueries({ queryKey: ['overview-location-stats'] })
     queryClient.invalidateQueries({ queryKey: ['overview-bfdp-stats'] })
+    queryClient.invalidateQueries({ queryKey: ['overview-skfpd-stats'] })
+    queryClient.invalidateQueries({ queryKey: ['sglg-dashboard'] })
   }
 
   return (
@@ -185,7 +299,13 @@ export default function Overview({ onNavigate }) {
         optionsLoading={geoOptionsQuery.isLoading}
         optionError={geoOptionsQuery.error?.message}
         onRefresh={handleRefresh}
-        isRefreshing={geoOptionsQuery.isFetching || locationStatsQuery.isFetching || bfdpStatsQuery.isFetching}
+        isRefreshing={
+          geoOptionsQuery.isFetching ||
+          locationStatsQuery.isFetching ||
+          bfdpStatsQuery.isFetching ||
+          skfpdStatsQuery.isFetching ||
+          sglgStatsQuery.isFetching
+        }
         includeMonth
       />
 
@@ -214,7 +334,7 @@ export default function Overview({ onNavigate }) {
         </section>
       ) : null}
 
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {reportModules.map((report) => {
           const reportState = getReportState(report, filters)
 
@@ -227,12 +347,19 @@ export default function Overview({ onNavigate }) {
                 </div>
                 <Badge color={reportState.color}>{reportState.label}</Badge>
               </div>
-              {report.id === 'bfdp' ? (
-                <BFDPCardStats
-                  stats={bfdpStatsQuery.data}
-                  isLoading={bfdpStatsQuery.isLoading}
+              {report.id === 'bfdp' || report.id === 'skfpd' ? (
+                <QuarterlyComplianceCardStats
+                  stats={report.id === 'bfdp' ? bfdpStatsQuery.data : skfpdStatsQuery.data}
+                  isLoading={report.id === 'bfdp' ? bfdpStatsQuery.isLoading : skfpdStatsQuery.isLoading}
                   isApplicable={reportState.isApplicable}
-                  hasSelectedLocation={hasSelectedLocation}
+                />
+              ) : null}
+              {report.id === 'sglg' ? (
+                <SGLGCardStats
+                  stats={sglgStatsQuery.data}
+                  isLoading={sglgStatsQuery.isLoading}
+                  isApplicable={reportState.isApplicable && isSGLGApplicable}
+                  isSelectedLgu={Boolean(sglgStatsFilters.province || sglgStatsFilters.city)}
                 />
               ) : null}
               <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
@@ -242,11 +369,21 @@ export default function Overview({ onNavigate }) {
                   </div>
                   <div className="mt-1 text-sm font-semibold text-slate-900">{report.frequency}</div>
                 </div>
-                {report.id === 'bfdp' ? (
+                {report.id === 'bfdp' || report.id === 'skfpd' ? (
                   <button
                     type="button"
-                    onClick={() => onNavigate('bfdp', { filters: getBFDPFilterPayload(filters) })}
+                    onClick={() => onNavigate(report.id, { filters: getQuarterlyFilterPayload(filters) })}
                     disabled={!reportState.isApplicable}
+                    className="rounded-lg bg-civic-700 px-4 py-2 text-sm font-semibold text-white hover:bg-civic-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    Open
+                  </button>
+                ) : null}
+                {report.id === 'sglg' ? (
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('sglg', { filters: getAnnualFilterPayload(filters) })}
+                    disabled={!reportState.isApplicable || !isSGLGApplicable}
                     className="rounded-lg bg-civic-700 px-4 py-2 text-sm font-semibold text-white hover:bg-civic-600 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     Open

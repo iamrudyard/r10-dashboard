@@ -17,10 +17,13 @@ export function useSGLGGeoOptions() {
   })
 }
 
-export function useSGLGDashboard(filters) {
+export function useSGLGDashboard(filters, options = {}) {
+  const enabled = options.enabled ?? true
+
   return useQuery({
     queryKey: ['sglg-dashboard', filters.year, filters.province, filters.city],
     queryFn: () => getSGLGDashboard(filters),
+    enabled,
     ...QUERY_OPTIONS,
   })
 }

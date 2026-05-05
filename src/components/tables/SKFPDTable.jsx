@@ -9,7 +9,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from '@tremor/react'
-import { DOCUMENT_FIELDS } from '../../utils/bfdpAnalytics'
+import { SKFPD_TABLE_FIELDS } from '../../utils/skfpdAnalytics'
 
 const HUC_PROVINCE_OPTIONS = ['city of cagayan de oro', 'city of iligan']
 
@@ -17,13 +17,15 @@ const normalizeText = (value) => (typeof value === 'string' ? value.trim().toLow
 
 const isHucProvinceOption = (value) => HUC_PROVINCE_OPTIONS.includes(normalizeText(value))
 
+const isSubmitted = (value) => value === true || Number(value) === 1
+
 const getGeoLabelPart = (record, key) => {
   const value = record[key] ?? record.lib_geographic_units?.[key]
 
   return typeof value === 'string' ? value.trim() : value
 }
 
-const getBFDPRecordLabel = (record) => {
+const getSKFPDRecordLabel = (record) => {
   const provinceHuc = getGeoLabelPart(record, 'province_huc')
   const cityMunName = getGeoLabelPart(record, 'city_mun_name')
   const barangayName = getGeoLabelPart(record, 'barangay_name')
@@ -60,7 +62,7 @@ const getStatusBadgeColor = (status) => {
     return 'red'
   }
 
-  return status ? 'slate' : 'slate'
+  return 'slate'
 }
 
 const getStatusBadgeClassName = (status) =>
@@ -72,13 +74,14 @@ const baseColumns = [
     label: 'LGU',
     className: 'whitespace-normal break-words px-1.5 py-2 text-xs leading-snug xl:px-2 xl:text-sm',
     headerClassName: 'whitespace-normal break-words px-1.5 py-2 text-xs leading-snug xl:px-2 xl:text-sm',
-    getValue: getBFDPRecordLabel,
+    getValue: getSKFPDRecordLabel,
   },
 ]
 
-const documentColumns = DOCUMENT_FIELDS.map((field) => ({
+const documentColumns = SKFPD_TABLE_FIELDS.map((field) => ({
   key: field.key,
   label: field.label,
+  title: field.fullLabel,
   className: 'px-0.5 py-2 text-center xl:px-1',
   headerClassName: 'whitespace-normal break-words px-0.5 py-2 text-center text-[11px] leading-tight xl:px-1 xl:text-xs',
   getValue: (record) => record[field.key],
@@ -130,7 +133,7 @@ const metricColumns = [
 const tableColumns = [...baseColumns, ...documentColumns, ...metricColumns]
 
 function BooleanBadge({ value }) {
-  return value ? (
+  return isSubmitted(value) ? (
     <Badge color="green" className={`${badgeClassName} ${badgeColorClasses.green}`}>
       Yes
     </Badge>
@@ -150,6 +153,7 @@ function SortableHeader({ column, sortConfig, onSort }) {
       <button
         type="button"
         onClick={() => onSort(column.key)}
+        title={column.title}
         className="flex w-full items-center justify-center gap-1 text-left font-semibold text-slate-700 hover:text-civic-700"
       >
         <span>{column.label}</span>
@@ -184,7 +188,7 @@ function compareValues(leftValue, rightValue, direction) {
   }) * multiplier
 }
 
-export default function BFDPTable({
+export default function SKFPDTable({
   records,
   totalRecords = records.length,
   page = 0,
@@ -221,11 +225,11 @@ export default function BFDPTable({
     <Card className="border border-slate-200 bg-white shadow-panel">
       <div className="mb-4 flex flex-col justify-between gap-2 md:flex-row md:items-center">
         <div>
-          <h2 className="text-base font-semibold text-slate-950">BFDP Detailed Records</h2>
+          <h2 className="text-base font-semibold text-slate-950">SKFPD Detailed Records</h2>
           <p className="text-sm text-slate-500">
             {activeStatusFilter
               ? `Filtered by status: ${activeStatusFilter}`
-              : 'Joined BFDP records with geographic unit fields.'}
+              : 'Joined SKFPD records with geographic unit fields.'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -258,14 +262,14 @@ export default function BFDPTable({
       <div className="w-full overflow-hidden">
         <Table className="w-full table-fixed text-xs leading-snug xl:text-sm">
           <colgroup>
-            <col className="w-[23%]" />
-            {DOCUMENT_FIELDS.map((field) => (
-              <col key={field.key} className="w-[5.4%]" />
+            <col className="w-[22%]" />
+            {SKFPD_TABLE_FIELDS.map((field) => (
+              <col key={field.key} className="w-[5.5%]" />
             ))}
             <col className="w-[5%]" />
             <col className="w-[5%]" />
             <col className="w-[5%]" />
-            <col className="w-[13.4%]" />
+            <col className="w-[19%]" />
           </colgroup>
           <TableHead>
             <TableRow>

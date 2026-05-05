@@ -1,15 +1,14 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import {
-  getBFDPDocumentCompletion,
-  getBFDPLocationStats,
-  getBFDPQuarterlyTrend,
-  getBFDPSummary,
-  getBFDPScoreByProvince,
-  getBFDPTable,
-  getGeoOptions,
-  getOverviewBFDPStats,
-  getOverviewLocationStats,
-} from '../services/bfdpService'
+  getOverviewSKFPDStats,
+  getSKFPDDocumentCompletion,
+  getSKFPDGeoOptions,
+  getSKFPDLocationStats,
+  getSKFPDQuarterlyTrend,
+  getSKFPDScoreByProvince,
+  getSKFPDSummary,
+  getSKFPDTable,
+} from '../services/skfpdService'
 
 const QUERY_OPTIONS = {
   staleTime: 1000 * 60 * 60,
@@ -22,135 +21,121 @@ const QUERY_OPTIONS = {
 const hasLocationFilter = (filters) =>
   Boolean(filters.province || filters.city || filters.barangay)
 
-export function useGeoOptions() {
+export function useSKFPDGeoOptions() {
   return useQuery({
-    queryKey: ['geo-options'],
-    queryFn: getGeoOptions,
+    queryKey: ['skfpd-geo-options'],
+    queryFn: getSKFPDGeoOptions,
     ...QUERY_OPTIONS,
   })
 }
 
-export function useOverviewLocationStats(filters) {
-  return useQuery({
-    queryKey: [
-      'overview-location-stats',
-      filters.province,
-      filters.city,
-      filters.barangay,
-    ],
-    queryFn: () => getOverviewLocationStats(filters),
-    enabled: hasLocationFilter(filters),
-    ...QUERY_OPTIONS,
-  })
-}
-
-export function useOverviewBFDPStats(filters, options = {}) {
+export function useOverviewSKFPDStats(filters, options = {}) {
   const enabled = options.enabled ?? true
   const requireLocation = options.requireLocation ?? true
 
   return useQuery({
     queryKey: [
-      'overview-bfdp-stats',
+      'overview-skfpd-stats',
       filters.year,
       filters.quarter,
       filters.province,
       filters.city,
       filters.barangay,
     ],
-    queryFn: () => getOverviewBFDPStats(filters),
+    queryFn: () => getOverviewSKFPDStats(filters),
     enabled: enabled && (requireLocation ? hasLocationFilter(filters) : true),
     ...QUERY_OPTIONS,
   })
 }
 
-export function useBFDPSummary(filters, options = {}) {
+export function useSKFPDSummary(filters, options = {}) {
   const requireLocation = options.requireLocation ?? true
 
   return useQuery({
     queryKey: [
-      'bfdp-summary',
+      'skfpd-summary',
       filters.year,
       filters.quarter,
       filters.province,
       filters.city,
       filters.barangay,
     ],
-    queryFn: () => getBFDPSummary(filters),
+    queryFn: () => getSKFPDSummary(filters),
     enabled: requireLocation ? hasLocationFilter(filters) : true,
     ...QUERY_OPTIONS,
   })
 }
 
-export function useBFDPDocumentCompletion(filters, options = {}) {
+export function useSKFPDDocumentCompletion(filters, options = {}) {
   const requireLocation = options.requireLocation ?? true
 
   return useQuery({
     queryKey: [
-      'bfdp-document-completion',
+      'skfpd-document-completion',
       filters.year,
       filters.quarter,
       filters.province,
       filters.city,
       filters.barangay,
     ],
-    queryFn: () => getBFDPDocumentCompletion(filters),
+    queryFn: () => getSKFPDDocumentCompletion(filters),
     enabled: requireLocation ? hasLocationFilter(filters) : true,
     ...QUERY_OPTIONS,
   })
 }
 
-export function useBFDPLocationStats(filters, options = {}) {
+export function useSKFPDLocationStats(filters, options = {}) {
   const requireLocation = options.requireLocation ?? true
 
   return useQuery({
     queryKey: [
-      'bfdp-location-stats',
+      'skfpd-location-stats',
       filters.year,
       filters.quarter,
       filters.province,
       filters.city,
       filters.barangay,
     ],
-    queryFn: () => getBFDPLocationStats(filters),
+    queryFn: () => getSKFPDLocationStats(filters),
     enabled: requireLocation ? hasLocationFilter(filters) : true,
     ...QUERY_OPTIONS,
   })
 }
 
-export function useBFDPScoreByProvince(filters, options = {}) {
+export function useSKFPDScoreByProvince(filters, options = {}) {
   const requireLocation = options.requireLocation ?? true
 
   return useQuery({
-    queryKey: ['bfdp-score-by-province', filters.year, filters.quarter],
-    queryFn: () => getBFDPScoreByProvince(filters),
+    queryKey: ['skfpd-score-by-province', filters.year, filters.quarter],
+    queryFn: () => getSKFPDScoreByProvince(filters),
     enabled: requireLocation ? hasLocationFilter(filters) : true,
     ...QUERY_OPTIONS,
   })
 }
 
-export function useBFDPQuarterlyTrend(filters, options = {}) {
+export function useSKFPDQuarterlyTrend(filters, options = {}) {
   const requireLocation = options.requireLocation ?? true
 
   return useQuery({
     queryKey: [
-      'bfdp-quarterly-trend',
+      'skfpd-quarterly-trend',
       filters.year,
       filters.province,
       filters.city,
       filters.barangay,
     ],
-    queryFn: () => getBFDPQuarterlyTrend(filters),
+    queryFn: () => getSKFPDQuarterlyTrend(filters),
     enabled: requireLocation ? hasLocationFilter(filters) : true,
     ...QUERY_OPTIONS,
   })
 }
 
-export function useBFDPTable(filters, options = {}) {
+export function useSKFPDTable(filters, options = {}) {
   const requireLocation = options.requireLocation ?? true
 
   return useQuery({
     queryKey: [
-      'bfdp-table',
+      'skfpd-table',
       filters.year,
       filters.quarter,
       filters.province,
@@ -160,7 +145,7 @@ export function useBFDPTable(filters, options = {}) {
       filters.page,
       filters.pageSize,
     ],
-    queryFn: () => getBFDPTable(filters),
+    queryFn: () => getSKFPDTable(filters),
     enabled: requireLocation ? hasLocationFilter(filters) : true,
     placeholderData: keepPreviousData,
     ...QUERY_OPTIONS,

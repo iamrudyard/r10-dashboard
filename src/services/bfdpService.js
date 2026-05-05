@@ -71,8 +71,8 @@ const normalizeText = (value) => (typeof value === 'string' ? value.trim().toLow
 
 const isBlank = (value) => value === null || value === undefined || String(value).trim() === ''
 
-const getStatusGroup = (status = '') => {
-  const normalized = status.toLowerCase()
+const getStatusGroup = (status) => {
+  const normalized = typeof status === 'string' ? status.toLowerCase() : ''
 
   if (normalized.includes('full')) {
     return 'full'
@@ -549,6 +549,33 @@ export async function getBFDPLocationStats(filters = {}) {
     0,
   )
   const barangayCount = uniqueGeoRows.filter((row) => normalizeOption(row.barangay_name)).length
+  const provinceHucCount = uniqueSorted(uniqueGeoRows.map((row) => row.province_huc)).length
+  const cityMunicipalityCount = uniqueRowsBy(
+    uniqueGeoRows.filter(
+      (row) =>
+        normalizeOption(row.city_mun_name) &&
+        isBlank(row.barangay_name) &&
+        normalizeText(row.city_mun_name) !== normalizeText(row.province_huc),
+    ),
+    (row) => `${row.province_huc}-${row.city_mun_name}`,
+  ).length
+  const provinceHucPopulationRows = uniqueRowsBy(
+    uniqueGeoRows.filter((row) => {
+      const lguType = normalizeText(row.lgu_type)
+
+      return (
+        isBlank(row.barangay_name) &&
+        (isBlank(row.city_mun_name) ||
+          normalizeText(row.city_mun_name) === normalizeText(row.province_huc) ||
+          lguType === 'province' ||
+          lguType === 'huc')
+      )
+    }),
+    (row) => row.province_huc,
+  )
+  const allScopePopulation = provinceHucPopulationRows.length
+    ? provinceHucPopulationRows.reduce((sum, row) => sum + (toNumber(row.population_2024) ?? 0), 0)
+    : totalPopulation
   const incomeClass = getSelectedIncomeClass(uniqueGeoRows, filters)
   const locationRow = uniqueGeoRows[0] ?? detailRows[0] ?? {}
 
@@ -565,6 +592,7 @@ export async function getBFDPLocationStats(filters = {}) {
   const latestRecord = getLatestRecord(detailRows)
 
   const level = filters.barangay ? 'barangay' : filters.city ? 'city' : 'province'
+  const isAllScope = !filters.province && !filters.city && !filters.barangay
 
   if (level === 'barangay') {
     return {
@@ -580,6 +608,25 @@ export async function getBFDPLocationStats(filters = {}) {
         { title: 'No. of Passed', value: passedCount },
         { title: 'No. of Failed', value: failedCount },
         { title: 'Overall Score', value: latestRecord?.status || 'N/A' },
+      ],
+    }
+  }
+
+  if (isAllScope) {
+    return {
+      level: 'all',
+      cards: [
+        {
+          title: 'Population',
+          value: formatNumber(allScopePopulation),
+          info: 'Population data is from year 2024.',
+        },
+        { title: 'Province/HUC', value: provinceHucCount },
+        { title: 'City/Municipality', value: cityMunicipalityCount },
+        { title: 'No. of Barangays', value: barangayCount },
+        { title: STATUS_LABELS.full, value: statusCounts.full },
+        { title: STATUS_LABELS.partial, value: statusCounts.partial },
+        { title: STATUS_LABELS.none, value: statusCounts.none },
       ],
     }
   }

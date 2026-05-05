@@ -2,6 +2,7 @@ const navItems = [
   { id: 'overview', label: 'Overview' },
   { id: 'sglg', label: 'SGLG' },
   { id: 'bfdp', label: 'BFDP' },
+  { id: 'skfpd', label: 'SKFPD' },
   { id: 'future', label: 'Other future reports' },
 ]
 

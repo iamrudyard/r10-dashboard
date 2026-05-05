@@ -2,16 +2,27 @@ import { useState } from 'react'
 import DashboardLayout from './components/layout/DashboardLayout'
 import Overview from './pages/Overview'
 import BFDPDashboard from './pages/BFDPDashboard'
+import SKFPDDashboard from './pages/SKFPDDashboard'
 import SGLGDashboard from './pages/SGLGDashboard'
 import SGLGPlaceholder from './pages/SGLGPlaceholder'
 
 export default function App() {
   const [activePage, setActivePage] = useState('overview')
   const [bfdpInitialFilters, setBfdpInitialFilters] = useState(null)
+  const [skfpdInitialFilters, setSkfpdInitialFilters] = useState(null)
+  const [sglgInitialFilters, setSglgInitialFilters] = useState(null)
 
   const handleNavigate = (page, options = {}) => {
     if (page === 'bfdp' && options.filters) {
       setBfdpInitialFilters(options.filters)
+    }
+
+    if (page === 'skfpd' && options.filters) {
+      setSkfpdInitialFilters(options.filters)
+    }
+
+    if (page === 'sglg' && options.filters) {
+      setSglgInitialFilters(options.filters)
     }
 
     setActivePage(page)
@@ -22,8 +33,12 @@ export default function App() {
       return <BFDPDashboard initialFilters={bfdpInitialFilters} />
     }
 
+    if (activePage === 'skfpd') {
+      return <SKFPDDashboard initialFilters={skfpdInitialFilters} />
+    }
+
     if (activePage === 'sglg') {
-      return <SGLGDashboard />
+      return <SGLGDashboard initialFilters={sglgInitialFilters} />
     }
 
     if (activePage === 'future') {

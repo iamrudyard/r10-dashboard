@@ -7,16 +7,17 @@ import StatusDonutChart from '../components/charts/StatusDonutChart'
 import DocumentCompletionChart from '../components/charts/DocumentCompletionChart'
 import ScoreByProvinceChart from '../components/charts/ScoreByProvinceChart'
 import QuarterlyTrendChart from '../components/charts/QuarterlyTrendChart'
-import BFDPTable from '../components/tables/BFDPTable'
+import SKFPDTable from '../components/tables/SKFPDTable'
 import {
-  useBFDPDocumentCompletion,
-  useBFDPLocationStats,
-  useBFDPQuarterlyTrend,
-  useBFDPSummary,
-  useBFDPScoreByProvince,
-  useBFDPTable,
-  useGeoOptions,
-} from '../hooks/useBFDPQueries'
+  useSKFPDDocumentCompletion,
+  useSKFPDGeoOptions,
+  useSKFPDLocationStats,
+  useSKFPDQuarterlyTrend,
+  useSKFPDScoreByProvince,
+  useSKFPDSummary,
+  useSKFPDTable,
+} from '../hooks/useSKFPDQueries'
+import { SKFPD_MAX_SCORE } from '../utils/skfpdAnalytics'
 
 const defaultFilters = {
   provinceHuc: '',
@@ -29,7 +30,7 @@ const defaultFilters = {
 function LoadingState() {
   return (
     <Card className="border border-slate-200 bg-white p-8 text-center shadow-panel">
-      <div className="text-sm font-semibold text-civic-700">Loading BFDP dashboard...</div>
+      <div className="text-sm font-semibold text-civic-700">Loading SKFPD dashboard...</div>
       <p className="mt-2 text-sm text-slate-500">Fetching data...</p>
     </Card>
   )
@@ -38,7 +39,7 @@ function LoadingState() {
 function ErrorState({ message }) {
   return (
     <Card className="border border-red-200 bg-red-50 p-8 text-center shadow-panel">
-      <div className="text-sm font-semibold text-red-800">Unable to load BFDP data</div>
+      <div className="text-sm font-semibold text-red-800">Unable to load SKFPD data</div>
       <p className="mt-2 text-sm text-red-700">{message}</p>
     </Card>
   )
@@ -47,15 +48,15 @@ function ErrorState({ message }) {
 function EmptyState() {
   return (
     <Card className="border border-slate-200 bg-white p-8 text-center shadow-panel">
-      <div className="text-base font-semibold text-slate-950">No BFDP data found</div>
+      <div className="text-base font-semibold text-slate-950">No SKFPD data found</div>
       <p className="mt-2 text-sm text-slate-500">
-        Adjust the selected location, year, or quarter filters to find matching BFDP records.
+        Adjust the selected location, year, or quarter filters to find matching SKFPD records.
       </p>
     </Card>
   )
 }
 
-export default function BFDPDashboard({ initialFilters }) {
+export default function SKFPDDashboard({ initialFilters }) {
   const queryClient = useQueryClient()
   const normalizedInitialFilters = useMemo(
     () => ({
@@ -113,13 +114,13 @@ export default function BFDPDashboard({ initialFilters }) {
     .filter(Boolean)
     .join(' > ') || 'All LGU'
 
-  const geoOptionsQuery = useGeoOptions()
-  const summaryQuery = useBFDPSummary(chartFilters, { requireLocation: false })
-  const locationStatsQuery = useBFDPLocationStats(chartFilters, { requireLocation: false })
-  const documentsQuery = useBFDPDocumentCompletion(chartFilters, { requireLocation: false })
-  const scoreByProvinceQuery = useBFDPScoreByProvince(chartFilters, { requireLocation: false })
-  const quarterlyTrendQuery = useBFDPQuarterlyTrend(chartFilters, { requireLocation: false })
-  const tableQuery = useBFDPTable(queryFilters, { requireLocation: false })
+  const geoOptionsQuery = useSKFPDGeoOptions()
+  const summaryQuery = useSKFPDSummary(chartFilters, { requireLocation: false })
+  const locationStatsQuery = useSKFPDLocationStats(chartFilters, { requireLocation: false })
+  const documentsQuery = useSKFPDDocumentCompletion(chartFilters, { requireLocation: false })
+  const scoreByProvinceQuery = useSKFPDScoreByProvince(chartFilters, { requireLocation: false })
+  const quarterlyTrendQuery = useSKFPDQuarterlyTrend(chartFilters, { requireLocation: false })
+  const tableQuery = useSKFPDTable(queryFilters, { requireLocation: false })
 
   const isInitialDashboardLoading =
     (summaryQuery.isLoading ||
@@ -165,12 +166,12 @@ export default function BFDPDashboard({ initialFilters }) {
   }
 
   const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['bfdp-summary'] })
-    queryClient.invalidateQueries({ queryKey: ['bfdp-location-stats'] })
-    queryClient.invalidateQueries({ queryKey: ['bfdp-document-completion'] })
-    queryClient.invalidateQueries({ queryKey: ['bfdp-score-by-province'] })
-    queryClient.invalidateQueries({ queryKey: ['bfdp-quarterly-trend'] })
-    queryClient.invalidateQueries({ queryKey: ['bfdp-table'] })
+    queryClient.invalidateQueries({ queryKey: ['skfpd-summary'] })
+    queryClient.invalidateQueries({ queryKey: ['skfpd-location-stats'] })
+    queryClient.invalidateQueries({ queryKey: ['skfpd-document-completion'] })
+    queryClient.invalidateQueries({ queryKey: ['skfpd-score-by-province'] })
+    queryClient.invalidateQueries({ queryKey: ['skfpd-quarterly-trend'] })
+    queryClient.invalidateQueries({ queryKey: ['skfpd-table'] })
   }
 
   return (
@@ -216,6 +217,7 @@ export default function BFDPDashboard({ initialFilters }) {
               data={quarterlyTrendQuery.data ?? []}
               selectedYear={filters.year}
               selectedLguPath={selectedLguPath}
+              maxScore={SKFPD_MAX_SCORE}
             />
           </section>
 
@@ -225,10 +227,13 @@ export default function BFDPDashboard({ initialFilters }) {
               selectedStatus={selectedStatusFilter}
               onStatusSelect={handleStatusFilterChange}
             />
-            <DocumentCompletionChart documents={documentCompletion} />
+            <DocumentCompletionChart
+              documents={documentCompletion}
+              title="SKFPD Document Completion"
+            />
           </section>
 
-          <BFDPTable
+          <SKFPDTable
             records={tableData.rows}
             totalRecords={tableData.count}
             page={page}

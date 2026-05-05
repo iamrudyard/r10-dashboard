@@ -2,9 +2,9 @@ import Chart from 'react-apexcharts'
 import { Card } from '@tremor/react'
 import ChartEmptyState from './ChartEmptyState'
 
-export default function DocumentCompletionChart({ documents }) {
+export default function DocumentCompletionChart({ documents, title = 'BFDP Document Completion' }) {
   if (!documents.length) {
-    return <ChartEmptyState title="BFDP Document Completion" />
+    return <ChartEmptyState title={title} />
   }
 
   const options = {
@@ -49,7 +49,7 @@ export default function DocumentCompletionChart({ documents }) {
 
         return `
           <div style="padding: 10px 12px; font-size: 13px; color: #0f172a;">
-            <div style="font-weight: 700;">${document.label}</div>
+            <div style="font-weight: 700;">${document.fullLabel ?? document.label}</div>
             <div style="margin-top: 4px; color: #475569;">${document.percentage}% completion</div>
             <div style="margin-top: 8px; display: grid; gap: 4px;">
               <div style="display: flex; justify-content: space-between; gap: 18px; color: #047857; font-weight: 700;">
@@ -69,7 +69,7 @@ export default function DocumentCompletionChart({ documents }) {
 
   return (
     <Card className="border border-slate-200 bg-white shadow-panel">
-      <h3 className="text-base font-semibold text-slate-950">BFDP Document Completion</h3>
+      <h3 className="text-base font-semibold text-slate-950">{title}</h3>
       <Chart
         options={options}
         series={[{ name: 'Completion', data: documents.map((item) => item.percentage) }]}
