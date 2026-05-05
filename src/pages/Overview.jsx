@@ -281,6 +281,16 @@ export default function Overview({ onNavigate }) {
     enabled: isSGLGApplicable,
   })
   const locationCards = locationStatsQuery.data?.cards ?? []
+  const overviewGeoOptions = useMemo(() => {
+    if (!geoOptionsQuery.data) {
+      return geoOptionsQuery.data
+    }
+
+    return {
+      ...geoOptionsQuery.data,
+      years: [...new Set([2024, ...(geoOptionsQuery.data.years ?? [])])].sort((a, b) => b - a),
+    }
+  }, [geoOptionsQuery.data])
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['geo-options'] })
@@ -295,7 +305,7 @@ export default function Overview({ onNavigate }) {
       <LocationFilters
         filters={filters}
         onChange={setFilters}
-        geoOptions={geoOptionsQuery.data}
+        geoOptions={overviewGeoOptions}
         optionsLoading={geoOptionsQuery.isLoading}
         optionError={geoOptionsQuery.error?.message}
         onRefresh={handleRefresh}
