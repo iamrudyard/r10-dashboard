@@ -46,7 +46,7 @@ export default function StatusDonutChart({ statusCounts, selectedStatus, onStatu
   const options = {
     chart: {
       toolbar: { show: false },
-      fontFamily: 'Aptos, Segoe UI, sans-serif',
+      fontFamily: '"Outfit", system-ui, sans-serif',
       events: {
         dataPointSelection: (_event, _chartContext, config) => {
           const status = labels[config.dataPointIndex]
@@ -86,12 +86,12 @@ export default function StatusDonutChart({ statusCounts, selectedStatus, onStatu
   }
 
   return (
-    <Card className="border border-slate-200 bg-white shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white shadow-panel">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-base font-semibold text-slate-950">Status Distribution</h3>
           {selectedStatus ? (
-            <p className="mt-1 text-xs font-medium text-civic-700">
+            <p className="mt-1 text-xs font-medium text-brand-coral">
               Filtering table by {selectedStatus}
             </p>
           ) : null}
@@ -100,7 +100,7 @@ export default function StatusDonutChart({ statusCounts, selectedStatus, onStatu
           <button
             type="button"
             onClick={() => onStatusSelect?.('')}
-            className="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+            className="rounded-full border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50"
           >
             Clear
           </button>

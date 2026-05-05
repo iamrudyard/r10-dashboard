@@ -4,7 +4,7 @@ export default function Header({ title, eyebrow, onMenuClick }) {
       <div className="flex items-center justify-between gap-4">
         <div>
           {eyebrow ? (
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-civic-600">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-coral">
               {eyebrow}
             </p>
           ) : null}
@@ -15,7 +15,7 @@ export default function Header({ title, eyebrow, onMenuClick }) {
         <button
           type="button"
           onClick={onMenuClick}
-          className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 lg:hidden"
+          className="rounded-full border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 lg:hidden"
           aria-label="Open navigation"
         >
           Menu

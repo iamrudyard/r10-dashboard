@@ -15,9 +15,9 @@ export default function DocumentCompletionChart({
   const options = {
     chart: {
       toolbar: { show: false },
-      fontFamily: 'Aptos, Segoe UI, sans-serif',
+      fontFamily: '"Outfit", system-ui, sans-serif',
     },
-    colors: ['#2f7d64'],
+    colors: ['#111111'],
     plotOptions: {
       bar: {
         borderRadius: 5,
@@ -73,7 +73,7 @@ export default function DocumentCompletionChart({
   }
 
   return (
-    <Card className="border border-slate-200 bg-white shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white shadow-panel">
       <h3 className="text-base font-semibold text-slate-950">{title}</h3>
       <Chart
         options={options}

@@ -10,9 +10,9 @@ export default function ScoreByProvinceChart({ data }) {
   const options = {
     chart: {
       toolbar: { show: false },
-      fontFamily: 'Aptos, Segoe UI, sans-serif',
+      fontFamily: '"Outfit", system-ui, sans-serif',
     },
-    colors: ['#d97706'],
+    colors: ['#E05E46'],
     plotOptions: {
       bar: {
         borderRadius: 5,
@@ -46,7 +46,7 @@ export default function ScoreByProvinceChart({ data }) {
   }
 
   return (
-    <Card className="border border-slate-200 bg-white shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white shadow-panel">
       <h3 className="text-base font-semibold text-slate-950">Score by Province/HUC</h3>
       <Chart
         options={options}

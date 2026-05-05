@@ -8,6 +8,11 @@ export default {
   theme: {
     extend: {
       colors: {
+        brand: {
+          dark: '#111111',
+          coral: '#e05e46',
+          bg: '#f9f9fb',
+        },
         civic: {
           50: '#f3f8f6',
           100: '#dcece6',
@@ -21,6 +26,10 @@ export default {
           500: '#d97706',
           700: '#9a3412',
         },
+      },
+      borderRadius: {
+        '4xl': '2rem',
+        'grid': '30px',
       },
       boxShadow: {
         panel: '0 18px 45px rgba(15, 23, 42, 0.08)',

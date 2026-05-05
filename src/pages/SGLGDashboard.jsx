@@ -86,7 +86,7 @@ function getOverallRatingClassName(value) {
 
 function LoadingState() {
   return (
-    <Card className="border border-slate-200 bg-white p-8 text-center shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-panel">
       <div className="text-sm font-semibold text-civic-700">Loading SGLG dashboard...</div>
       <p className="mt-2 text-sm text-slate-500">Fetching assessment records and indicators.</p>
     </Card>
@@ -95,7 +95,7 @@ function LoadingState() {
 
 function ErrorState({ message }) {
   return (
-    <Card className="border border-red-200 bg-red-50 p-8 text-center shadow-panel">
+    <Card className="rounded-[30px] border border-red-200 bg-red-50 p-8 text-center shadow-panel">
       <div className="text-sm font-semibold text-red-800">Unable to load SGLG data</div>
       <p className="mt-2 text-sm text-red-700">{message}</p>
     </Card>
@@ -104,7 +104,7 @@ function ErrorState({ message }) {
 
 function EmptyState() {
   return (
-    <Card className="border border-slate-200 bg-white p-8 text-center shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-panel">
       <div className="text-base font-semibold text-slate-950">No SGLG data found</div>
       <p className="mt-2 text-sm text-slate-500">
         Adjust the selected Province/HUC, City/Municipality, or year filters.
@@ -160,7 +160,7 @@ function SGLGRatingDonut({ statusCounts }) {
   }
 
   return (
-    <Card className="border border-slate-200 bg-white shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white shadow-panel">
       <h3 className="text-base font-semibold text-slate-950">Overall Rating Distribution</h3>
       <Chart options={options} series={series} type="donut" height={310} />
     </Card>
@@ -344,7 +344,7 @@ function AreaStatusChart({ indicators, showPercentages }) {
   }
 
   return (
-    <Card className="border border-slate-200 bg-white shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white shadow-panel">
       <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
         <h3 className="text-base font-semibold text-slate-950">
           {showPercentages ? '10 Governance LGU Passing Rate' : '10 Governance Area Pass/Fail Value'}
@@ -467,7 +467,7 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
   }
 
   return (
-    <Card className="border border-slate-200 bg-white shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white shadow-panel">
       <div className="flex flex-col justify-between gap-2 border-b border-slate-100 pb-3 sm:flex-row sm:items-start">
         <div>
           <h3 className="text-base font-semibold text-slate-950">{indicator.title}</h3>
@@ -480,7 +480,7 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
             </p>
           ) : null}
         </div>
-        <div className="rounded-lg border border-civic-100 bg-civic-50 px-3 py-1.5 text-right">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-right">
           {showPercentages ? (
             <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-civic-700">
               LGU Passing Rate
@@ -509,7 +509,7 @@ function SGLGTable({ records, totalRecords, page, pageSize, onPageChange, onPage
   const currentPage = Math.min(page + 1, totalPages)
 
   return (
-    <Card className="border border-slate-200 bg-white shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white shadow-panel">
       <div className="mb-4 flex flex-col justify-between gap-2 md:flex-row md:items-center">
         <div>
           <h2 className="text-base font-semibold text-slate-950">SGLG Detailed Records</h2>
@@ -524,7 +524,7 @@ function SGLGTable({ records, totalRecords, page, pageSize, onPageChange, onPage
             <select
               value={pageSize}
               onChange={(event) => onPageSizeChange?.(Number(event.target.value))}
-              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm"
+              className="rounded-full border border-slate-300 bg-white px-2 py-1 text-sm"
             >
               <option value={25}>25</option>
               <option value={50}>50</option>
@@ -594,7 +594,7 @@ function SGLGTable({ records, totalRecords, page, pageSize, onPageChange, onPage
             type="button"
             onClick={() => onPageChange?.(Math.max(0, page - 1))}
             disabled={page === 0}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Previous
           </button>
@@ -602,7 +602,7 @@ function SGLGTable({ records, totalRecords, page, pageSize, onPageChange, onPage
             type="button"
             onClick={() => onPageChange?.(Math.min(totalPages - 1, page + 1))}
             disabled={page >= totalPages - 1}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Next
           </button>

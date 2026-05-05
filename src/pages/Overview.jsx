@@ -85,7 +85,7 @@ function getReportState(report, filters) {
 
 function SelectionState() {
   return (
-    <Card className="border border-slate-200 bg-white p-8 text-center shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-panel">
       <div className="text-base font-semibold text-slate-950">Select a location</div>
       <p className="mt-2 text-sm text-slate-500">Population and LGU profile cards will appear here.</p>
     </Card>
@@ -141,7 +141,7 @@ function QuarterlyComplianceCardStats({
 }) {
   if (!isApplicable) {
     return (
-      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
         {notApplicableMessage}
       </div>
     )
@@ -151,7 +151,7 @@ function QuarterlyComplianceCardStats({
     return (
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
         {['Full Compliant', 'Partial Compliant', 'None Compliant'].map((title) => (
-          <div key={title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <div key={title} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
             <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
               {title}
             </div>
@@ -164,7 +164,7 @@ function QuarterlyComplianceCardStats({
 
   if (stats?.mode === 'status') {
     return (
-      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
         <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
           Status
         </div>
@@ -176,7 +176,7 @@ function QuarterlyComplianceCardStats({
   return (
     <div className="mt-4 grid gap-2 sm:grid-cols-3">
       {(stats?.cards ?? []).map((card) => (
-        <div key={card.title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <div key={card.title} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
           <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             {card.title}
           </div>
@@ -190,7 +190,7 @@ function QuarterlyComplianceCardStats({
 function SGLGCardStats({ stats, isLoading, isApplicable, isSelectedLgu }) {
   if (!isApplicable) {
     return (
-      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
         Not applicable for Barangay, Quarter, or Month filter.
       </div>
     )
@@ -200,7 +200,7 @@ function SGLGCardStats({ stats, isLoading, isApplicable, isSelectedLgu }) {
     return (
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
         {['Passed', 'Failed', 'Rate'].map((title) => (
-          <div key={title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <div key={title} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
             <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
               {title}
             </div>
@@ -213,7 +213,7 @@ function SGLGCardStats({ stats, isLoading, isApplicable, isSelectedLgu }) {
 
   if (!stats?.totalRecords) {
     return (
-      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
         No SGLG data found for the selected filters.
       </div>
     )
@@ -233,7 +233,7 @@ function SGLGCardStats({ stats, isLoading, isApplicable, isSelectedLgu }) {
   return (
     <div className="mt-4 grid gap-2 sm:grid-cols-3">
       {cards.map((card) => (
-        <div key={card.title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+        <div key={card.title} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
           <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
             {card.title}
           </div>
@@ -389,7 +389,7 @@ export default function Overview({ onNavigate }) {
           const reportState = getReportState(report, filters)
 
           return (
-            <Card key={report.id} className="border border-slate-200 bg-white shadow-panel">
+            <Card key={report.id} className="rounded-[30px] border border-slate-200 bg-white shadow-panel">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold text-slate-950">{report.title}</h3>
@@ -445,7 +445,7 @@ export default function Overview({ onNavigate }) {
                     type="button"
                     onClick={() => onNavigate(report.id, { filters: getQuarterlyFilterPayload(filters) })}
                     disabled={!reportState.isApplicable}
-                    className="rounded-lg bg-civic-700 px-4 py-2 text-sm font-semibold text-white hover:bg-civic-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="rounded-full bg-brand-coral px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark transition-colors disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     Open
                   </button>
@@ -455,7 +455,7 @@ export default function Overview({ onNavigate }) {
                     type="button"
                     onClick={() => onNavigate('ltrpp', { filters: getLTRPPFilterPayload(filters) })}
                     disabled={!reportState.isApplicable || !isLTRPPApplicable}
-                    className="rounded-lg bg-civic-700 px-4 py-2 text-sm font-semibold text-white hover:bg-civic-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="rounded-full bg-brand-coral px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark transition-colors disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     Open
                   </button>
@@ -465,7 +465,7 @@ export default function Overview({ onNavigate }) {
                     type="button"
                     onClick={() => onNavigate('sglg', { filters: getAnnualFilterPayload(filters) })}
                     disabled={!reportState.isApplicable || !isSGLGApplicable}
-                    className="rounded-lg bg-civic-700 px-4 py-2 text-sm font-semibold text-white hover:bg-civic-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className="rounded-full bg-brand-coral px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark transition-colors disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     Open
                   </button>

@@ -5,7 +5,7 @@ export default function SummaryCard({ title, value, note, info, valueClassName =
   const [showInfo, setShowInfo] = useState(false)
 
   return (
-    <Card className="relative border border-slate-200 bg-white shadow-panel">
+    <Card className="rounded-[30px] relative border border-slate-200 bg-white shadow-panel">
       <div className="flex items-center gap-2">
         <Text className="text-sm font-medium text-slate-500">{title}</Text>
         {info ? (
@@ -21,7 +21,7 @@ export default function SummaryCard({ title, value, note, info, valueClassName =
       </div>
       <Metric className={`mt-2 text-2xl font-semibold ${valueClassName}`}>{value}</Metric>
       {showInfo && info ? (
-        <div className="absolute left-5 top-10 z-20 max-w-56 rounded-lg border border-civic-100 bg-white px-3 py-2 text-xs font-medium text-civic-800 shadow-xl">
+        <div className="absolute left-5 top-10 z-20 max-w-56 rounded-2xl border border-civic-100 bg-white px-3 py-2 text-xs font-medium text-civic-800 shadow-xl">
           {info}
         </div>
       ) : null}

@@ -29,9 +29,9 @@ export default function QuarterlyTrendChart({ data, selectedYear, selectedLguPat
   const options = {
     chart: {
       toolbar: { show: false },
-      fontFamily: 'Aptos, Segoe UI, sans-serif',
+      fontFamily: '"Outfit", system-ui, sans-serif',
     },
-    colors: ['#2563eb'],
+    colors: ['#E05E46'],
     stroke: {
       curve: 'smooth',
       width: 3,
@@ -39,7 +39,7 @@ export default function QuarterlyTrendChart({ data, selectedYear, selectedLguPat
     markers: {
       size: 5,
       colors: ['#ffffff'],
-      strokeColors: '#2563eb',
+      strokeColors: '#E05E46',
       strokeWidth: 3,
     },
     dataLabels: {
@@ -67,7 +67,7 @@ export default function QuarterlyTrendChart({ data, selectedYear, selectedLguPat
   }
 
   return (
-    <Card className="border border-slate-200 bg-white shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white shadow-panel">
       <div className="flex flex-col justify-between gap-1 md:flex-row md:items-center">
         <ChartTitle selectedLguPath={selectedLguPath} />
         <p className="text-sm text-slate-500">{selectedYear || 'All available years'}</p>

@@ -33,7 +33,7 @@ function SelectField({ label, value, onChange, children, disabled }) {
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-civic-500 focus:ring-2 focus:ring-civic-500/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+        className="mt-1.5 w-full rounded-full border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-brand-coral focus:ring-2 focus:ring-brand-coral/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
       >
         {children}
       </select>
@@ -94,7 +94,7 @@ function SearchableSelectField({
             }, 120)
           }}
           onChange={(event) => handleSearchChange(event.target.value)}
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 pr-9 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-civic-500 focus:ring-2 focus:ring-civic-500/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+          className="w-full rounded-full border border-slate-300 bg-white px-3 py-1.5 pr-9 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-brand-coral focus:ring-2 focus:ring-brand-coral/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
         />
         {value ? (
           <button
@@ -113,7 +113,7 @@ function SearchableSelectField({
       </div>
 
       {isOpen && !disabled ? (
-        <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white py-1 shadow-xl">
+        <div className="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-3xl border border-slate-200 bg-white py-1 shadow-xl">
           <button
             type="button"
             onMouseDown={(event) => event.preventDefault()}
@@ -122,7 +122,7 @@ function SearchableSelectField({
               onChange('')
               setIsOpen(false)
             }}
-            className="w-full px-3 py-2 text-left text-sm text-slate-600 hover:bg-civic-50"
+            className="w-full px-3 py-2 text-left text-sm text-slate-600 hover:bg-slate-50"
           >
             {placeholder}
           </button>
@@ -137,8 +137,8 @@ function SearchableSelectField({
                   onChange(option)
                   setIsOpen(false)
                 }}
-                className={`w-full px-3 py-2 text-left text-sm hover:bg-civic-50 ${
-                  option === value ? 'bg-civic-50 font-semibold text-civic-700' : 'text-slate-800'
+                className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 ${
+                  option === value ? 'bg-slate-50 font-semibold text-brand-coral' : 'text-slate-800'
                 }`}
               >
                 {option}
@@ -224,7 +224,7 @@ export default function LocationFilters({
   }
 
   return (
-    <Card className="border border-slate-200 bg-white p-3 shadow-panel md:p-4">
+    <Card className="rounded-[30px] border border-slate-200 bg-white p-3 shadow-panel md:p-4">
       <div className="mb-3 flex justify-end gap-2">
         <button
           type="button"
@@ -238,7 +238,7 @@ export default function LocationFilters({
               ...(includeMonth ? { month: '' } : {}),
             })
           }
-          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          className="rounded-full border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
           Reset
         </button>
@@ -246,14 +246,14 @@ export default function LocationFilters({
           type="button"
           onClick={onRefresh}
           disabled={refreshDisabled || isRefreshing}
-          className="rounded-lg bg-civic-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-civic-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="rounded-full bg-brand-coral px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-dark transition-colors disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           {isRefreshing ? 'Refreshing...' : 'Refresh'}
         </button>
       </div>
 
       {optionError ? (
-        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="mb-3 rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {optionError}
         </div>
       ) : null}

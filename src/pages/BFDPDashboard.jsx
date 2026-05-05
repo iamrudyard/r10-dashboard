@@ -28,7 +28,7 @@ const defaultFilters = {
 
 function LoadingState() {
   return (
-    <Card className="border border-slate-200 bg-white p-8 text-center shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-panel">
       <div className="text-sm font-semibold text-civic-700">Loading BFDP dashboard...</div>
       <p className="mt-2 text-sm text-slate-500">Fetching data...</p>
     </Card>
@@ -37,7 +37,7 @@ function LoadingState() {
 
 function ErrorState({ message }) {
   return (
-    <Card className="border border-red-200 bg-red-50 p-8 text-center shadow-panel">
+    <Card className="rounded-[30px] border border-red-200 bg-red-50 p-8 text-center shadow-panel">
       <div className="text-sm font-semibold text-red-800">Unable to load BFDP data</div>
       <p className="mt-2 text-sm text-red-700">{message}</p>
     </Card>
@@ -46,7 +46,7 @@ function ErrorState({ message }) {
 
 function EmptyState() {
   return (
-    <Card className="border border-slate-200 bg-white p-8 text-center shadow-panel">
+    <Card className="rounded-[30px] border border-slate-200 bg-white p-8 text-center shadow-panel">
       <div className="text-base font-semibold text-slate-950">No BFDP data found</div>
       <p className="mt-2 text-sm text-slate-500">
         Adjust the selected location, year, or quarter filters to find matching BFDP records.

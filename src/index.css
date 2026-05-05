@@ -3,11 +3,10 @@
 @tailwind utilities;
 
 :root {
-  color: #17231f;
-  background: #eef4f1;
+  color: #111111;
+  background: #f9f9fb;
   font-family:
-    "Aptos",
-    "Segoe UI",
+    "Outfit",
     system-ui,
     sans-serif;
 }
@@ -16,10 +15,7 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background:
-    linear-gradient(135deg, rgba(47, 125, 100, 0.08), transparent 34%),
-    linear-gradient(315deg, rgba(217, 119, 6, 0.07), transparent 38%),
-    #eef4f1;
+  background: #f9f9fb;
 }
 
 button,
