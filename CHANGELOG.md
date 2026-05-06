@@ -1,23 +1,41 @@
 # Changelog
 
-Major feature changes for the Region 10 Report Analytics Dashboard.
+Changes are generated from the Git commit log and grouped by commit date.
 
-## Unreleased
+## 2026-05-06
 
-- Added full SGLG dashboard support with annual location filters, overall rating summaries, Province/HUC rating bars, governance area analytics, sub-indicator charts, and detailed records.
-- Added LPTRPP dashboard support with score, compliance, document completion, remarks, trend, and detailed record views.
-- Expanded the Overview page to include SGLG, BFDP, SKFPD, LPTRPP, and Other report cards in the required order.
-- Updated Overview card layout to show four cards per row on wide screens and align report card stat/footer rows.
-- Added clickable status/rating bar filtering for SGLG, BFDP, SKFPD, and LPTRPP detail tables.
-- Updated SGLG and BFDP status/rating charts to preserve Province/HUC context while highlighting selected Province/HUC filters.
-- Added city/municipality drilldown behavior for status/rating charts when a specific location is selected.
-- Sorted BFDP, SKFPD, and LPTRPP average score by Province/HUC charts by score.
-- Renamed score chart title to `Avg Score by Province/HUC`.
-- Fixed searchable dropdown inputs so only one clear button is displayed.
+- `d9d18d3` changelog
+- `ce327ba` feat: recreate CHANGELOG.md with detailed feature updates for the Region 10 Report Analytics Dashboard
+- `242988c` feat: update README and add CHANGELOG for SGLG and LPTRPP dashboard support
+- `6bce4ee` feat: add ProvinceStatusColumnChart to SGLG and SKFPD dashboards
 
-## Initial Build
+## 2026-05-05
 
-- Added React + Vite dashboard shell with responsive sidebar navigation.
-- Added Supabase client integration and environment-based configuration.
-- Added BFDP and SKFPD dashboards with location filters, summary cards, status analytics, document completion charts, score charts, quarterly trends, and detailed tables.
-- Added shared chart, table, card, and filter components.
+- `70d2cfd` add lptrpp components
+- `81f0c07` add year 2024 in overview
+- `0bc4967` added SKFPD component and refactor sglg and bfdp components
+
+## 2026-05-04
+
+- `978e715` Merge branch 'main' of https://github.com/iamrudyard/r10-dashboard
+- `06678d8` my changes locally
+
+## 2026-05-02
+
+- `6a52e9d` update sglg
+
+## 2026-04-30
+
+- `53363ff` adding sglg compoent
+- `fb0e4f8` Refactor BFDP components to support status filtering and enhance chart tooltips
+- `e36d8f6` Merge branch 'main' of https://github.com/iamrudyard/r10-dashboard
+- `de784cc` update overview and bfdp
+- `3275c86` Update vite.config.js
+- `6e5acbe` Add environment variable for Supabase URL
+
+## 2026-04-29
+
+- `4e3b394` update config for vercel
+- `fc35612` update
+- `c4d5e0e` first upload file
+- `ff7429c` Initial commit
