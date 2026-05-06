@@ -1,21 +1,47 @@
 # Region 10 Report Analytics Dashboard
 
-React + Vite dashboard for government report analytics. BFDP and SKFPD dashboards use the provided report tables and `lib_geographic_units` schema. SGLG and future report modules are placeholders until schemas are available.
+React + Vite dashboard for Region 10 government report analytics. The app uses Supabase report tables joined with `lib_geographic_units` to provide overview cards, location filters, score charts, status/rating charts, document completion charts, trends, and detailed records.
 
-## Database fields used
+## Report Modules
+
+- `SGLG` - Seal of Good Local Governance annual ratings and governance area pass/fail analytics.
+- `BFDP` - Barangay Full Disclosure Policy quarterly compliance analytics.
+- `SKFPD` - SK Full Public Disclosure quarterly compliance analytics.
+- `LPTRPP` - Local Public Transport Route Plan Preparation quarterly compliance analytics.
+- `Other` - reserved overview card for future report schemas.
+
+## Key Features
+
+- Overview page with Province/HUC, City/Municipality, Barangay, Year, Quarter, and Month filters.
+- Overview report cards arranged as SGLG, BFDP, SKFPD, LPTRPP, and Other, with four cards per row on wide screens.
+- Shared location filters with searchable City/Municipality and Barangay dropdowns.
+- Province/HUC, City/Municipality, Barangay, Year, and Quarter filtering for quarterly report dashboards.
+- SGLG dashboard with annual filters, overall rating summaries, rating by Province/HUC, governance area charts, sub-indicator charts, and detailed records.
+- BFDP, SKFPD, and LPTRPP dashboards with summary cards, average score by Province/HUC, quarterly trends, status by location, document completion charts, and detailed tables.
+- Clickable status/rating bars that filter detailed records and related charts.
+- Province/HUC status/rating charts that keep regional context while highlighting the selected Province/HUC.
+- Score-by-Province/HUC charts sorted by average score.
+- ApexCharts bar, column, line, donut, and completion charts.
+- Responsive dashboard layout with sidebar navigation.
+
+## Database Fields Used
 
 `public.bfdp`: `id`, `lgu_id`, `bfr`, `brgy_budget`, `summary_income`, `ira_nta_utilization`, `annual_procurement_plan`, `notice_of_award`, `month_1st`, `month_2nd`, `month_3rd`, `score`, `quarter`, `year`, `status`, `created_at`, `updated_at`
 
 `public.skfpd`: `id`, `lgu_id`, `cbydp`, `abyip`, `annual_budget`, `rcb`, `month_1st`, `month_2nd`, `month_3rd`, `score`, `status`, `skfpd_pb`, `quarter`, `year`, `created_at`
 
+`public.lptrpp`: `id`, `lgu_id`, `planning_team`, `draft_plan`, `submission_of_plan`, `certification_issuance`, `remarks`, `quarter`, `year`, `created_at`
+
+`public.sglg`: `id`, `lgu_id`, `assessment_year`, `overall_rating`, and the SGLG governance area/sub-indicator fields defined in `src/utils/sglgIndicators.js`
+
 `public.lib_geographic_units`: `id`, `psgc_code`, `region_name`, `province_huc`, `city_mun_name`, `barangay_name`, `income_class`, `lgu_type`, `urban_rural_type`, `population_2024`, `created_at`
+
+The BFDP dashboard also reads from `v_bfdp_details`, `v_bfdp_summary_by_status`, and `v_bfdp_document_completion`.
 
 ## Installation
 
 ```bash
 npm install
-npm install @supabase/supabase-js @tremor/react apexcharts react-apexcharts
-npm install -D tailwindcss postcss autoprefixer
 ```
 
 ## Environment
@@ -23,8 +49,8 @@ npm install -D tailwindcss postcss autoprefixer
 Create `.env`:
 
 ```bash
-VITE_SUPABASE_URL=https://zkfmatusybvqxhrtvycx.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_4ku3Q8-D6Rc32okj7ss51Q_0ojQORU2
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 ```
 
 Do not use Supabase service role keys in the frontend. Configure proper Supabase RLS policies for production use.
@@ -37,57 +63,59 @@ npm run build
 npm run preview
 ```
 
-## Folder structure
+## Folder Structure
 
 ```text
 src/
   components/
-    layout/
-      Sidebar.jsx
-      Header.jsx
-      DashboardLayout.jsx
-    filters/
-      LocationFilters.jsx
     cards/
       SummaryCard.jsx
-      DocumentComplianceGrid.jsx
     charts/
-      StatusDonutChart.jsx
-      DocumentCompletionChart.jsx
-      ScoreByProvinceChart.jsx
-      QuarterlyTrendChart.jsx
       ChartEmptyState.jsx
+      DocumentCompletionChart.jsx
+      ProvinceStatusColumnChart.jsx
+      QuarterlyTrendChart.jsx
+      ScoreByProvinceChart.jsx
+      StatusDonutChart.jsx
+    filters/
+      LocationFilters.jsx
+    layout/
+      DashboardLayout.jsx
+      Header.jsx
+      Sidebar.jsx
     tables/
       BFDPTable.jsx
+      LTRPPTable.jsx
       SKFPDTable.jsx
-  pages/
-    Overview.jsx
-    BFDPDashboard.jsx
-    SKFPDDashboard.jsx
-    SGLGPlaceholder.jsx
-  services/
-    bfdpService.js
-    skfpdService.js
+  hooks/
+    useBFDPQueries.js
+    useLTRPPQueries.js
+    useSGLGQueries.js
+    useSKFPDQueries.js
   lib/
     supabaseClient.js
+  pages/
+    BFDPDashboard.jsx
+    LTRPPDashboard.jsx
+    Overview.jsx
+    SGLGDashboard.jsx
+    SGLGPlaceholder.jsx
+    SKFPDDashboard.jsx
+  services/
+    bfdpService.js
+    ltrppService.js
+    sglgService.js
+    skfpdService.js
   utils/
     bfdpAnalytics.js
+    ltrppAnalytics.js
+    sglgIndicators.js
     skfpdAnalytics.js
   App.jsx
   main.jsx
   index.css
 ```
 
-## Implemented
+## Changelog
 
-- Responsive sidebar dashboard layout
-- Overview page with actual BFDP and SKFPD summaries
-- BFDP dashboard with Province/HUC, City/Municipality, Barangay, Year, and Quarter filters
-- SKFPD dashboard with Province/HUC, City/Municipality, Barangay, Year, and Quarter filters
-- Supabase BFDP query joined with `lib_geographic_units`
-- Supabase SKFPD query joined with `lib_geographic_units`
-- Status grouping based on actual `status` values
-- BFDP and SKFPD document true/false counts and completion percentages
-- ApexCharts donut, bar, column, and line charts
-- Detailed BFDP and SKFPD tables with submitted/missing badges
-- SGLG placeholder: “SGLG dashboard will be added soon.”
+See [CHANGELOG.md](./CHANGELOG.md) for major feature history.
