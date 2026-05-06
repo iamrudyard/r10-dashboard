@@ -1,0 +1,52 @@
+name: Documentation Check
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.js'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - '.github/workflows/docs-check.yml'
+
+jobs:
+  docs-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Check README and CHANGELOG were updated
+        shell: bash
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          changed_files="$(git diff --name-only "$base" "$head")"
+
+          code_changed="$(printf '%s\n' "$changed_files" | grep -E '^(src/|scripts/|package(-lock)?\.json$|vite\.config\.js$)' || true)"
+          docs_changed="$(printf '%s\n' "$changed_files" | grep -E '^(README\.md|CHANGELOG\.md)$' || true)"
+
+          if [ -n "$code_changed" ] && [ -z "$docs_changed" ]; then
+            echo "Source or project files changed, but README.md or CHANGELOG.md was not updated."
+            echo "Run npm run docs:update after committing changes and update README.md when behavior/setup changes."
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify generated changelog is current
+        run: npm run docs:check

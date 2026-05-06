@@ -7,6 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "docs:changelog": "node scripts/generate-changelog.mjs",
+    "docs:update": "npm run docs:changelog",
+    "docs:check": "npm run docs:changelog && git diff --exit-code README.md CHANGELOG.md",
     "preview": "vite preview"
   },
   "engines": {

@@ -4,6 +4,7 @@ Changes are generated from the Git commit log and grouped by commit date.
 
 ## 2026-05-06
 
+- `98f024c` feat: update CHANGELOG.md with detailed feature updates and commit history
 - `d9d18d3` changelog
 - `ce327ba` feat: recreate CHANGELOG.md with detailed feature updates for the Region 10 Report Analytics Dashboard
 - `242988c` feat: update README and add CHANGELOG for SGLG and LPTRPP dashboard support

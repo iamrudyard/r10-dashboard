@@ -60,8 +60,17 @@ Do not use Supabase service role keys in the frontend. Configure proper Supabase
 ```bash
 npm run dev
 npm run build
+npm run docs:update
+npm run docs:check
 npm run preview
 ```
+
+## Documentation Workflow
+
+- Update `README.md` whenever setup, report behavior, filters, data fields, folder structure, or major user-facing functionality changes.
+- Regenerate `CHANGELOG.md` from committed Git history with `npm run docs:update`.
+- Run `npm run docs:check` before opening a pull request to confirm the generated changelog matches the commit log.
+- The GitHub documentation check requires `README.md` or `CHANGELOG.md` to change when source or project files change in a pull request.
 
 ## Folder Structure
 
