@@ -183,12 +183,93 @@ function getRowsQuery() {
   return supabase.from('sglg').select(getSGLGSelect())
 }
 
+function getRatingGroup(value) {
+  const normalized = normalizeText(value)
+
+  if (normalized === 'passed' || normalized === 'passes') {
+    return 'PASSED'
+  }
+
+  if (normalized === 'failed') {
+    return 'FAILED'
+  }
+
+  return value ? normalizeOption(value) : 'No Rating'
+}
+
+function filterRowsByRating(rows, rating) {
+  if (!rating) {
+    return rows
+  }
+
+  const selectedRating = normalizeText(rating)
+
+  return rows.filter((row) => normalizeText(getRatingGroup(row.overall_rating)) === selectedRating)
+}
+
 function getStatusCounts(rows) {
   return rows.reduce((counts, row) => {
-    const status = row.overall_rating || 'No Rating'
+    const status = getRatingGroup(row.overall_rating)
     counts[status] = (counts[status] ?? 0) + 1
     return counts
   }, {})
+}
+
+const SGLG_STATUS_SERIES = [
+  { value: 'PASSED', label: 'PASSES' },
+  { value: 'FAILED', label: 'FAILED' },
+]
+
+function getStatusLocationKey(row, filters = {}) {
+  const geo = getGeo(row)
+
+  if (filters.province) {
+    return normalizeOption(geo.city_mun_name) || normalizeOption(geo.province_huc)
+  }
+
+  return normalizeOption(geo.province_huc)
+}
+
+function getProvinceStatusCounts(rows, filters = {}) {
+  const locations = filters.province
+    ? uniqueSorted(rows.map((row) => getStatusLocationKey(row, filters))).map((city) => ({
+        label: city,
+        province: filters.province,
+        city,
+      }))
+    : uniqueSorted(rows.map((row) => getGeo(row).province_huc)).map((province) => ({
+        label: province,
+        province,
+        city: '',
+      }))
+  const countsByProvince = new Map(
+    locations.map((location) => [
+      normalizeText(location.label),
+      SGLG_STATUS_SERIES.reduce(
+        (counts, status) => ({
+          ...counts,
+          [status.value]: 0,
+        }),
+        {},
+      ),
+    ]),
+  )
+
+  rows.forEach((row) => {
+    const locationKey = normalizeText(getStatusLocationKey(row, filters))
+    const status = getRatingGroup(row.overall_rating)
+
+    if (!locationKey || !countsByProvince.has(locationKey) || countsByProvince.get(locationKey)[status] === undefined) {
+      return
+    }
+
+    countsByProvince.get(locationKey)[status] += 1
+  })
+
+  return locations.map((location) => ({
+    ...location,
+    counts: countsByProvince.get(normalizeText(location.label)),
+  }))
 }
 
 function getFieldStats(rows, key) {
@@ -204,7 +285,7 @@ function getFieldStats(rows, key) {
   }
 }
 
-function buildAnalytics(rows) {
+function buildAnalytics(rows, filters = {}) {
   const statusCounts = getStatusCounts(rows)
   const passedCount = statusCounts.PASSED ?? 0
   const failedCount = statusCounts.FAILED ?? 0
@@ -275,6 +356,7 @@ function buildAnalytics(rows) {
     overallPassRate: roundPercentage(passedCount, passedCount + failedCount),
     areaPassRate: roundPercentage(areaPassTotal, areaTotal),
     statusCounts,
+    provinceStatusCounts: getProvinceStatusCounts(rows, filters),
     indicators,
   }
 }
@@ -328,8 +410,8 @@ export async function getSGLGDashboard(filters = {}) {
     !filters.province && !filters.city ? getProvinceHucPopulationTotal() : Promise.resolve(null),
   ])
 
-  const sortedRows = sortRowsByLocation(filterRowsBySpecificLgu(rows, filters))
-  const analytics = buildAnalytics(sortedRows)
+  const sortedRows = sortRowsByLocation(filterRowsByRating(filterRowsBySpecificLgu(rows, filters), filters.status))
+  const analytics = buildAnalytics(sortedRows, filters)
 
   return {
     ...analytics,
@@ -348,7 +430,7 @@ export async function getSGLGTable(filters = {}) {
     query = applySGLGFilters(query, filters)
     return query.order('assessment_year', { ascending: false, nullsFirst: false })
   })
-  const filteredRows = sortRowsByLocation(filterRowsBySpecificLgu(rows, filters))
+  const filteredRows = sortRowsByLocation(filterRowsByRating(filterRowsBySpecificLgu(rows, filters), filters.status))
 
   return {
     rows: filteredRows.slice(from, to).map((row) => ({

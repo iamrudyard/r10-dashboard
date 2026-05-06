@@ -5,6 +5,7 @@ import {
   getBFDPQuarterlyTrend,
   getBFDPSummary,
   getBFDPScoreByProvince,
+  getBFDPStatusByProvince,
   getBFDPTable,
   getGeoOptions,
   getOverviewBFDPStats,
@@ -123,6 +124,24 @@ export function useBFDPScoreByProvince(filters, options = {}) {
   return useQuery({
     queryKey: ['bfdp-score-by-province', filters.year, filters.quarter],
     queryFn: () => getBFDPScoreByProvince(filters),
+    enabled: requireLocation ? hasLocationFilter(filters) : true,
+    ...QUERY_OPTIONS,
+  })
+}
+
+export function useBFDPStatusByProvince(filters, options = {}) {
+  const requireLocation = options.requireLocation ?? true
+
+  return useQuery({
+    queryKey: [
+      'bfdp-status-by-province',
+      filters.year,
+      filters.quarter,
+      filters.province,
+      filters.city,
+      filters.barangay,
+    ],
+    queryFn: () => getBFDPStatusByProvince(filters),
     enabled: requireLocation ? hasLocationFilter(filters) : true,
     ...QUERY_OPTIONS,
   })

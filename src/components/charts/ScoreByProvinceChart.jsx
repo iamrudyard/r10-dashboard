@@ -2,10 +2,12 @@ import Chart from 'react-apexcharts'
 import { Card } from '@tremor/react'
 import ChartEmptyState from './ChartEmptyState'
 
-export default function ScoreByProvinceChart({ data }) {
+export default function ScoreByProvinceChart({ data, title = 'Avg Score by Province/HUC' }) {
   if (!data.length) {
-    return <ChartEmptyState title="Score by Province/HUC" />
+    return <ChartEmptyState title={title} />
   }
+
+  const maxValue = Math.max(1, ...data.map((item) => item.averageScore ?? 0))
 
   const options = {
     chart: {
@@ -13,16 +15,23 @@ export default function ScoreByProvinceChart({ data }) {
       fontFamily: 'Aptos, Segoe UI, sans-serif',
     },
     colors: ['#d97706'],
+    grid: {
+      show: false,
+    },
     plotOptions: {
       bar: {
         borderRadius: 5,
         columnWidth: '46%',
+        dataLabels: {
+          position: 'top',
+        },
       },
     },
     dataLabels: {
       enabled: true,
       formatter: (value) => (value === null ? '' : value.toFixed(1)),
-      style: { fontSize: '11px' },
+      offsetY: -18,
+      style: { colors: ['#0f172a'], fontSize: '11px', fontWeight: 700 },
     },
     xaxis: {
       categories: data.map((item) => item.province),
@@ -33,8 +42,10 @@ export default function ScoreByProvinceChart({ data }) {
       },
     },
     yaxis: {
+      min: 0,
+      max: Math.ceil(maxValue * 1.18),
       labels: {
-        formatter: (value) => value.toFixed(0),
+        show: false,
       },
     },
     tooltip: {
@@ -47,7 +58,7 @@ export default function ScoreByProvinceChart({ data }) {
 
   return (
     <Card className="border border-slate-200 bg-white shadow-panel">
-      <h3 className="text-base font-semibold text-slate-950">Score by Province/HUC</h3>
+      <h3 className="text-base font-semibold text-slate-950">{title}</h3>
       <Chart
         options={options}
         series={[{ name: 'Average Score', data: data.map((item) => item.averageScore) }]}

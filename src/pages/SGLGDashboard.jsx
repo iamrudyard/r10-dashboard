@@ -13,6 +13,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import SummaryCard from '../components/cards/SummaryCard'
 import ChartEmptyState from '../components/charts/ChartEmptyState'
+import ProvinceStatusColumnChart from '../components/charts/ProvinceStatusColumnChart'
 import LocationFilters from '../components/filters/LocationFilters'
 import { useSGLGDashboard, useSGLGGeoOptions, useSGLGTable } from '../hooks/useSGLGQueries'
 import { getSGLGRecordLabel } from '../services/sglgService'
@@ -23,6 +24,11 @@ const defaultFilters = {
   cityMunName: '',
   year: '',
 }
+
+const sglgStatusSeries = [
+  { label: 'PASSES', value: 'PASSED' },
+  { label: 'FAILED', value: 'FAILED' },
+]
 
 const badgeClassName =
   'border px-1.5 py-0.5 text-[11px] font-medium leading-4 shadow-none ring-1 ring-inset xl:px-2 xl:text-xs'
@@ -288,6 +294,9 @@ function AreaStatusChart({ indicators, showPercentages }) {
       stacked: true,
     },
     colors: ['#d3212c', '#2f7d64'],
+    grid: {
+      show: false,
+    },
     plotOptions: {
       bar: {
         horizontal: true,
@@ -302,7 +311,7 @@ function AreaStatusChart({ indicators, showPercentages }) {
       min: -axisLimit,
       max: axisLimit,
       labels: {
-        show: showPercentages,
+        show: false,
         formatter: (value) => showPercentages ? `${Math.abs(value)}%` : Math.abs(value).toFixed(0),
       },
     },
@@ -402,6 +411,9 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
       },
     },
     colors: ['#d3212c', '#2f7d64'],
+    grid: {
+      show: false,
+    },
     plotOptions: {
       bar: {
         horizontal: true,
@@ -416,7 +428,7 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
       min: -axisLimit,
       max: axisLimit,
       labels: {
-        show: showPercentages,
+        show: false,
         formatter: (value) => showPercentages ? `${Math.abs(value)}%` : Math.abs(value).toFixed(0),
       },
     },
@@ -504,7 +516,16 @@ function SubIndicatorCard({ indicator, showPercentages, overallRating }) {
   )
 }
 
-function SGLGTable({ records, totalRecords, page, pageSize, onPageChange, onPageSizeChange }) {
+function SGLGTable({
+  records,
+  totalRecords,
+  page,
+  pageSize,
+  activeFilterLabel = '',
+  onClearFilter,
+  onPageChange,
+  onPageSizeChange,
+}) {
   const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize))
   const currentPage = Math.min(page + 1, totalPages)
 
@@ -513,9 +534,22 @@ function SGLGTable({ records, totalRecords, page, pageSize, onPageChange, onPage
       <div className="mb-4 flex flex-col justify-between gap-2 md:flex-row md:items-center">
         <div>
           <h2 className="text-base font-semibold text-slate-950">SGLG Detailed Records</h2>
-          <p className="text-sm text-slate-500">Annual LGU ratings with the 10 governance area statuses.</p>
+          <p className="text-sm text-slate-500">
+            {activeFilterLabel
+              ? `Filtered by ${activeFilterLabel}`
+              : 'Annual LGU ratings with the 10 governance area statuses.'}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {activeFilterLabel ? (
+            <button
+              type="button"
+              onClick={onClearFilter}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Clear filter
+            </button>
+          ) : null}
           <Badge color="slate">
             {records.length} of {totalRecords} records
           </Badge>
@@ -622,11 +656,19 @@ export default function SGLGDashboard({ initialFilters }) {
     [initialFilters],
   )
   const [filters, setFilters] = useState(normalizedInitialFilters)
+  const [selectedChartFilter, setSelectedChartFilter] = useState({
+    province: '',
+    city: '',
+    locationLabel: '',
+    status: '',
+    statusLabel: '',
+  })
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(25)
 
   useEffect(() => {
     setFilters(normalizedInitialFilters)
+    setSelectedChartFilter({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
     setPage(0)
   }, [normalizedInitialFilters])
 
@@ -638,24 +680,74 @@ export default function SGLGDashboard({ initialFilters }) {
     }),
     [filters.year, filters.provinceHuc, filters.cityMunName],
   )
+  const dashboardFilters = useMemo(
+    () => ({
+      year: filters.year,
+      province: selectedChartFilter.province || filters.provinceHuc,
+      city: selectedChartFilter.city || filters.cityMunName,
+      status: selectedChartFilter.status,
+    }),
+    [
+      filters.year,
+      filters.provinceHuc,
+      filters.cityMunName,
+      selectedChartFilter.province,
+      selectedChartFilter.city,
+      selectedChartFilter.status,
+    ],
+  )
+  const ratingChartFilters = useMemo(
+    () =>
+      selectedChartFilter.province
+        ? dashboardFilters
+        : {
+            year: filters.year,
+            province: '',
+            city: '',
+            status: '',
+          },
+    [dashboardFilters, filters.year, selectedChartFilter.province],
+  )
   const tableFilters = useMemo(
     () => ({
-      ...queryFilters,
+      year: dashboardFilters.year,
+      province: dashboardFilters.province,
+      city: dashboardFilters.city,
+      status: selectedChartFilter.status,
       page,
       pageSize,
     }),
-    [page, pageSize, queryFilters],
+    [
+      dashboardFilters.year,
+      dashboardFilters.province,
+      dashboardFilters.city,
+      page,
+      pageSize,
+      selectedChartFilter.status,
+    ],
   )
 
   const geoOptionsQuery = useSGLGGeoOptions()
-  const dashboardQuery = useSGLGDashboard(queryFilters)
+  const dashboardQuery = useSGLGDashboard(dashboardFilters)
+  const ratingChartQuery = useSGLGDashboard(ratingChartFilters)
   const tableQuery = useSGLGTable(tableFilters)
   const dashboard = dashboardQuery.data
+  const ratingDashboard = ratingChartQuery.data
   const tableData = tableQuery.data ?? { rows: [], count: 0 }
-  const isLoading = dashboardQuery.isLoading || tableQuery.isLoading
-  const isRefreshing = geoOptionsQuery.isFetching || dashboardQuery.isFetching || tableQuery.isFetching
-  const dashboardError = dashboardQuery.error || tableQuery.error
-  const showPercentages = !queryFilters.province && !queryFilters.city
+  const isLoading = dashboardQuery.isLoading || ratingChartQuery.isLoading || tableQuery.isLoading
+  const isRefreshing =
+    geoOptionsQuery.isFetching || dashboardQuery.isFetching || ratingChartQuery.isFetching || tableQuery.isFetching
+  const dashboardError = dashboardQuery.error || ratingChartQuery.error || tableQuery.error
+  const showPercentages = !dashboardFilters.province && !dashboardFilters.city && !dashboardFilters.status
+  const showStatusColumnChart = !queryFilters.city || Boolean(selectedChartFilter.province)
+  const statusChartTitle = selectedChartFilter.province
+    ? 'SGLG Rating by City/Municipality'
+    : 'SGLG Rating by Province/HUC'
+  const statusChartData = selectedChartFilter.province
+    ? dashboard?.provinceStatusCounts ?? []
+    : ratingDashboard?.provinceStatusCounts ?? []
+  const highlightedStatusLocation =
+    selectedChartFilter.locationLabel || (!selectedChartFilter.province ? filters.provinceHuc : '')
   const indicatorGroups = useMemo(
     () => groupIndicatorsBySubIndicatorCount(dashboard?.indicators ?? []),
     [dashboard?.indicators],
@@ -663,11 +755,23 @@ export default function SGLGDashboard({ initialFilters }) {
 
   const handleFilterChange = (nextFilters) => {
     setPage(0)
+    setSelectedChartFilter({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
     setFilters({
       provinceHuc: nextFilters.provinceHuc ?? '',
       cityMunName: nextFilters.cityMunName ?? '',
       year: nextFilters.year ?? '',
     })
+  }
+
+  const handleChartFilterChange = (selection) => {
+    setPage(0)
+    setSelectedChartFilter((current) =>
+      current.province === selection.province &&
+      current.city === selection.city &&
+      current.status === selection.status
+        ? { province: '', city: '', locationLabel: '', status: '', statusLabel: '' }
+        : selection,
+    )
   }
 
   const handleRefresh = () => {
@@ -720,8 +824,18 @@ export default function SGLGDashboard({ initialFilters }) {
             )}
           </section>
 
-          <section className={showPercentages ? 'grid gap-6 xl:grid-cols-2' : ''}>
-            {showPercentages ? <SGLGRatingDonut statusCounts={dashboard.statusCounts} /> : null}
+          <section className={showStatusColumnChart ? 'grid gap-6 xl:grid-cols-2' : ''}>
+            {showStatusColumnChart ? (
+              <ProvinceStatusColumnChart
+                data={statusChartData}
+                statuses={sglgStatusSeries}
+                title={statusChartTitle}
+                selectedFilter={selectedChartFilter}
+                highlightedLocation={highlightedStatusLocation}
+                onFilterSelect={handleChartFilterChange}
+                colors={['#069c56', '#d3212c']}
+              />
+            ) : null}
             <AreaStatusChart indicators={dashboard.indicators} showPercentages={showPercentages} />
           </section>
 
@@ -748,6 +862,14 @@ export default function SGLGDashboard({ initialFilters }) {
             totalRecords={tableData.count}
             page={page}
             pageSize={pageSize}
+            activeFilterLabel={
+              selectedChartFilter.locationLabel && selectedChartFilter.statusLabel
+                ? `${selectedChartFilter.statusLabel} in ${selectedChartFilter.locationLabel}`
+                : ''
+            }
+            onClearFilter={() =>
+              handleChartFilterChange({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
+            }
             onPageChange={setPage}
             onPageSizeChange={(nextPageSize) => {
               setPage(0)

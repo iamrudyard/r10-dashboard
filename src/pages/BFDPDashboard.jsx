@@ -3,7 +3,7 @@ import { Card } from '@tremor/react'
 import { useQueryClient } from '@tanstack/react-query'
 import SummaryCard from '../components/cards/SummaryCard'
 import LocationFilters from '../components/filters/LocationFilters'
-import StatusDonutChart from '../components/charts/StatusDonutChart'
+import ProvinceStatusColumnChart from '../components/charts/ProvinceStatusColumnChart'
 import DocumentCompletionChart from '../components/charts/DocumentCompletionChart'
 import ScoreByProvinceChart from '../components/charts/ScoreByProvinceChart'
 import QuarterlyTrendChart from '../components/charts/QuarterlyTrendChart'
@@ -14,6 +14,7 @@ import {
   useBFDPQuarterlyTrend,
   useBFDPSummary,
   useBFDPScoreByProvince,
+  useBFDPStatusByProvince,
   useBFDPTable,
   useGeoOptions,
 } from '../hooks/useBFDPQueries'
@@ -25,6 +26,12 @@ const defaultFilters = {
   year: '',
   quarter: '',
 }
+
+const bfdpStatusSeries = [
+  { label: 'Full Compliant', value: 'Full Compliant' },
+  { label: 'Partial Compliant', value: 'Partial Compliant' },
+  { label: 'None Compliant', value: 'None Compliant' },
+]
 
 function LoadingState() {
   return (
@@ -65,13 +72,19 @@ export default function BFDPDashboard({ initialFilters }) {
     [initialFilters],
   )
   const [filters, setFilters] = useState(normalizedInitialFilters)
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState('')
+  const [selectedChartFilter, setSelectedChartFilter] = useState({
+    province: '',
+    city: '',
+    locationLabel: '',
+    status: '',
+    statusLabel: '',
+  })
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(25)
 
   useEffect(() => {
     setFilters(normalizedInitialFilters)
-    setSelectedStatusFilter('')
+    setSelectedChartFilter({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
     setPage(0)
   }, [normalizedInitialFilters])
 
@@ -79,10 +92,10 @@ export default function BFDPDashboard({ initialFilters }) {
     () => ({
       year: filters.year,
       quarter: filters.quarter,
-      province: filters.provinceHuc,
-      city: filters.cityMunName,
-      barangay: filters.barangayName,
-      status: selectedStatusFilter,
+      province: selectedChartFilter.province || filters.provinceHuc,
+      city: selectedChartFilter.city || filters.cityMunName,
+      barangay: selectedChartFilter.city ? '' : filters.barangayName,
+      status: selectedChartFilter.status,
       page,
       pageSize,
     }),
@@ -92,7 +105,9 @@ export default function BFDPDashboard({ initialFilters }) {
       filters.provinceHuc,
       filters.cityMunName,
       filters.barangayName,
-      selectedStatusFilter,
+      selectedChartFilter.province,
+      selectedChartFilter.city,
+      selectedChartFilter.status,
       page,
       pageSize,
     ],
@@ -108,16 +123,31 @@ export default function BFDPDashboard({ initialFilters }) {
     }),
     [filters.year, filters.quarter, filters.provinceHuc, filters.cityMunName, filters.barangayName],
   )
+  const statusChartFilters = useMemo(
+    () => ({
+      year: filters.year,
+      quarter: filters.quarter,
+      province: filters.cityMunName ? filters.provinceHuc : '',
+      city: filters.cityMunName,
+      barangay: '',
+    }),
+    [filters.year, filters.quarter, filters.provinceHuc, filters.cityMunName],
+  )
 
   const selectedLguPath = [filters.provinceHuc, filters.cityMunName, filters.barangayName]
     .filter(Boolean)
     .join(' > ') || 'All LGU'
+  const statusChartTitle = filters.provinceHuc && filters.cityMunName
+    ? 'BFDP Status by City/Municipality'
+    : 'BFDP Status by Province/HUC'
+  const highlightedStatusLocation = selectedChartFilter.locationLabel || filters.cityMunName || filters.provinceHuc
 
   const geoOptionsQuery = useGeoOptions()
   const summaryQuery = useBFDPSummary(chartFilters, { requireLocation: false })
   const locationStatsQuery = useBFDPLocationStats(chartFilters, { requireLocation: false })
   const documentsQuery = useBFDPDocumentCompletion(chartFilters, { requireLocation: false })
   const scoreByProvinceQuery = useBFDPScoreByProvince(chartFilters, { requireLocation: false })
+  const statusByProvinceQuery = useBFDPStatusByProvince(statusChartFilters, { requireLocation: false })
   const quarterlyTrendQuery = useBFDPQuarterlyTrend(chartFilters, { requireLocation: false })
   const tableQuery = useBFDPTable(queryFilters, { requireLocation: false })
 
@@ -126,6 +156,7 @@ export default function BFDPDashboard({ initialFilters }) {
       documentsQuery.isLoading ||
       locationStatsQuery.isLoading ||
       scoreByProvinceQuery.isLoading ||
+      statusByProvinceQuery.isLoading ||
       quarterlyTrendQuery.isLoading ||
       tableQuery.isLoading)
 
@@ -134,6 +165,7 @@ export default function BFDPDashboard({ initialFilters }) {
     locationStatsQuery.error ||
     documentsQuery.error ||
     scoreByProvinceQuery.error ||
+    statusByProvinceQuery.error ||
     quarterlyTrendQuery.error ||
     tableQuery.error
 
@@ -150,18 +182,25 @@ export default function BFDPDashboard({ initialFilters }) {
     locationStatsQuery.isFetching ||
     documentsQuery.isFetching ||
     scoreByProvinceQuery.isFetching ||
+    statusByProvinceQuery.isFetching ||
     quarterlyTrendQuery.isFetching ||
     tableQuery.isFetching
 
   const handleFilterChange = (nextFilters) => {
     setPage(0)
-    setSelectedStatusFilter('')
+    setSelectedChartFilter({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
     setFilters(nextFilters)
   }
 
-  const handleStatusFilterChange = (status) => {
+  const handleChartFilterChange = (selection) => {
     setPage(0)
-    setSelectedStatusFilter((current) => (current === status ? '' : status))
+    setSelectedChartFilter((current) =>
+      current.province === selection.province &&
+      current.city === selection.city &&
+      current.status === selection.status
+        ? { province: '', city: '', locationLabel: '', status: '', statusLabel: '' }
+        : selection,
+    )
   }
 
   const handleRefresh = () => {
@@ -169,6 +208,7 @@ export default function BFDPDashboard({ initialFilters }) {
     queryClient.invalidateQueries({ queryKey: ['bfdp-location-stats'] })
     queryClient.invalidateQueries({ queryKey: ['bfdp-document-completion'] })
     queryClient.invalidateQueries({ queryKey: ['bfdp-score-by-province'] })
+    queryClient.invalidateQueries({ queryKey: ['bfdp-status-by-province'] })
     queryClient.invalidateQueries({ queryKey: ['bfdp-quarterly-trend'] })
     queryClient.invalidateQueries({ queryKey: ['bfdp-table'] })
   }
@@ -220,10 +260,13 @@ export default function BFDPDashboard({ initialFilters }) {
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
-            <StatusDonutChart
-              statusCounts={summary?.statusCounts ?? {}}
-              selectedStatus={selectedStatusFilter}
-              onStatusSelect={handleStatusFilterChange}
+            <ProvinceStatusColumnChart
+              data={statusByProvinceQuery.data ?? []}
+              statuses={bfdpStatusSeries}
+              title={statusChartTitle}
+              selectedFilter={selectedChartFilter}
+              highlightedLocation={highlightedStatusLocation}
+              onFilterSelect={handleChartFilterChange}
             />
             <DocumentCompletionChart documents={documentCompletion} />
           </section>
@@ -233,8 +276,10 @@ export default function BFDPDashboard({ initialFilters }) {
             totalRecords={tableData.count}
             page={page}
             pageSize={pageSize}
-            activeStatusFilter={selectedStatusFilter}
-            onClearStatusFilter={() => handleStatusFilterChange(selectedStatusFilter)}
+            activeStatusFilter={selectedChartFilter.statusLabel}
+            onClearStatusFilter={() =>
+              handleChartFilterChange({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
+            }
             onPageChange={setPage}
             onPageSizeChange={(nextPageSize) => {
               setPage(0)

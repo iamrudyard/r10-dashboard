@@ -82,7 +82,7 @@ function SearchableSelectField({
       </span>
       <div className="relative mt-1.5">
         <input
-          type="search"
+          type="text"
           value={search}
           disabled={disabled}
           placeholder={placeholder}

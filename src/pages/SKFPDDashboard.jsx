@@ -3,7 +3,7 @@ import { Card } from '@tremor/react'
 import { useQueryClient } from '@tanstack/react-query'
 import SummaryCard from '../components/cards/SummaryCard'
 import LocationFilters from '../components/filters/LocationFilters'
-import StatusDonutChart from '../components/charts/StatusDonutChart'
+import ProvinceStatusColumnChart from '../components/charts/ProvinceStatusColumnChart'
 import DocumentCompletionChart from '../components/charts/DocumentCompletionChart'
 import ScoreByProvinceChart from '../components/charts/ScoreByProvinceChart'
 import QuarterlyTrendChart from '../components/charts/QuarterlyTrendChart'
@@ -14,6 +14,7 @@ import {
   useSKFPDLocationStats,
   useSKFPDQuarterlyTrend,
   useSKFPDScoreByProvince,
+  useSKFPDStatusByProvince,
   useSKFPDSummary,
   useSKFPDTable,
 } from '../hooks/useSKFPDQueries'
@@ -26,6 +27,12 @@ const defaultFilters = {
   year: '',
   quarter: '',
 }
+
+const skfpdStatusSeries = [
+  { label: 'Full Compliant', value: 'Full Compliant' },
+  { label: 'Partial Compliant', value: 'Partial Compliant' },
+  { label: 'None Compliant', value: 'None Compliant' },
+]
 
 function LoadingState() {
   return (
@@ -66,13 +73,19 @@ export default function SKFPDDashboard({ initialFilters }) {
     [initialFilters],
   )
   const [filters, setFilters] = useState(normalizedInitialFilters)
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState('')
+  const [selectedChartFilter, setSelectedChartFilter] = useState({
+    province: '',
+    city: '',
+    locationLabel: '',
+    status: '',
+    statusLabel: '',
+  })
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(25)
 
   useEffect(() => {
     setFilters(normalizedInitialFilters)
-    setSelectedStatusFilter('')
+    setSelectedChartFilter({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
     setPage(0)
   }, [normalizedInitialFilters])
 
@@ -80,10 +93,10 @@ export default function SKFPDDashboard({ initialFilters }) {
     () => ({
       year: filters.year,
       quarter: filters.quarter,
-      province: filters.provinceHuc,
-      city: filters.cityMunName,
-      barangay: filters.barangayName,
-      status: selectedStatusFilter,
+      province: selectedChartFilter.province || filters.provinceHuc,
+      city: selectedChartFilter.city || filters.cityMunName,
+      barangay: selectedChartFilter.city ? '' : filters.barangayName,
+      status: selectedChartFilter.status,
       page,
       pageSize,
     }),
@@ -93,7 +106,9 @@ export default function SKFPDDashboard({ initialFilters }) {
       filters.provinceHuc,
       filters.cityMunName,
       filters.barangayName,
-      selectedStatusFilter,
+      selectedChartFilter.province,
+      selectedChartFilter.city,
+      selectedChartFilter.status,
       page,
       pageSize,
     ],
@@ -113,12 +128,16 @@ export default function SKFPDDashboard({ initialFilters }) {
   const selectedLguPath = [filters.provinceHuc, filters.cityMunName, filters.barangayName]
     .filter(Boolean)
     .join(' > ') || 'All LGU'
+  const statusChartTitle = filters.provinceHuc
+    ? 'SKFPD Status by City/Municipality'
+    : 'SKFPD Status by Province/HUC'
 
   const geoOptionsQuery = useSKFPDGeoOptions()
   const summaryQuery = useSKFPDSummary(chartFilters, { requireLocation: false })
   const locationStatsQuery = useSKFPDLocationStats(chartFilters, { requireLocation: false })
   const documentsQuery = useSKFPDDocumentCompletion(chartFilters, { requireLocation: false })
   const scoreByProvinceQuery = useSKFPDScoreByProvince(chartFilters, { requireLocation: false })
+  const statusByProvinceQuery = useSKFPDStatusByProvince(chartFilters, { requireLocation: false })
   const quarterlyTrendQuery = useSKFPDQuarterlyTrend(chartFilters, { requireLocation: false })
   const tableQuery = useSKFPDTable(queryFilters, { requireLocation: false })
 
@@ -127,6 +146,7 @@ export default function SKFPDDashboard({ initialFilters }) {
       documentsQuery.isLoading ||
       locationStatsQuery.isLoading ||
       scoreByProvinceQuery.isLoading ||
+      statusByProvinceQuery.isLoading ||
       quarterlyTrendQuery.isLoading ||
       tableQuery.isLoading)
 
@@ -135,6 +155,7 @@ export default function SKFPDDashboard({ initialFilters }) {
     locationStatsQuery.error ||
     documentsQuery.error ||
     scoreByProvinceQuery.error ||
+    statusByProvinceQuery.error ||
     quarterlyTrendQuery.error ||
     tableQuery.error
 
@@ -151,18 +172,25 @@ export default function SKFPDDashboard({ initialFilters }) {
     locationStatsQuery.isFetching ||
     documentsQuery.isFetching ||
     scoreByProvinceQuery.isFetching ||
+    statusByProvinceQuery.isFetching ||
     quarterlyTrendQuery.isFetching ||
     tableQuery.isFetching
 
   const handleFilterChange = (nextFilters) => {
     setPage(0)
-    setSelectedStatusFilter('')
+    setSelectedChartFilter({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
     setFilters(nextFilters)
   }
 
-  const handleStatusFilterChange = (status) => {
+  const handleChartFilterChange = (selection) => {
     setPage(0)
-    setSelectedStatusFilter((current) => (current === status ? '' : status))
+    setSelectedChartFilter((current) =>
+      current.province === selection.province &&
+      current.city === selection.city &&
+      current.status === selection.status
+        ? { province: '', city: '', locationLabel: '', status: '', statusLabel: '' }
+        : selection,
+    )
   }
 
   const handleRefresh = () => {
@@ -170,6 +198,7 @@ export default function SKFPDDashboard({ initialFilters }) {
     queryClient.invalidateQueries({ queryKey: ['skfpd-location-stats'] })
     queryClient.invalidateQueries({ queryKey: ['skfpd-document-completion'] })
     queryClient.invalidateQueries({ queryKey: ['skfpd-score-by-province'] })
+    queryClient.invalidateQueries({ queryKey: ['skfpd-status-by-province'] })
     queryClient.invalidateQueries({ queryKey: ['skfpd-quarterly-trend'] })
     queryClient.invalidateQueries({ queryKey: ['skfpd-table'] })
   }
@@ -222,10 +251,12 @@ export default function SKFPDDashboard({ initialFilters }) {
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
-            <StatusDonutChart
-              statusCounts={summary?.statusCounts ?? {}}
-              selectedStatus={selectedStatusFilter}
-              onStatusSelect={handleStatusFilterChange}
+            <ProvinceStatusColumnChart
+              data={statusByProvinceQuery.data ?? []}
+              statuses={skfpdStatusSeries}
+              title={statusChartTitle}
+              selectedFilter={selectedChartFilter}
+              onFilterSelect={handleChartFilterChange}
             />
             <DocumentCompletionChart
               documents={documentCompletion}
@@ -238,8 +269,10 @@ export default function SKFPDDashboard({ initialFilters }) {
             totalRecords={tableData.count}
             page={page}
             pageSize={pageSize}
-            activeStatusFilter={selectedStatusFilter}
-            onClearStatusFilter={() => handleStatusFilterChange(selectedStatusFilter)}
+            activeStatusFilter={selectedChartFilter.statusLabel}
+            onClearStatusFilter={() =>
+              handleChartFilterChange({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
+            }
             onPageChange={setPage}
             onPageSizeChange={(nextPageSize) => {
               setPage(0)

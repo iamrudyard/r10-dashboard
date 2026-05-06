@@ -17,7 +17,31 @@ const initialFilters = {
   month: '',
 }
 
+const miniStatClassName =
+  'flex min-h-[74px] flex-col rounded-lg border border-slate-200 bg-slate-50 px-3 py-2'
+
+const miniStatLabelClassName =
+  'flex min-h-[32px] items-start text-[11px] font-semibold uppercase leading-4 tracking-[0.12em] text-slate-500'
+
+const miniStatValueClassName = 'mt-auto text-sm font-semibold text-slate-900'
+
+const reportHeaderClassName = 'flex min-h-[78px] items-start justify-between gap-3'
+
+const statsGridClassName = 'mt-4 grid min-h-[74px] gap-2 sm:grid-cols-3'
+
+const statsMessageClassName =
+  'mt-4 flex min-h-[74px] items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500'
+
 const reportModules = [
+  {
+    id: 'sglg',
+    title: 'SGLG',
+    description: 'Seal of Good Local Governance',
+    frequency: 'Annual',
+    status: 'Live',
+    color: 'emerald',
+    periods: ['annual'],
+  },
   {
     id: 'bfdp',
     title: 'BFDP',
@@ -46,17 +70,8 @@ const reportModules = [
     periods: ['quarter'],
   },
   {
-    id: 'sglg',
-    title: 'SGLG',
-    description: 'Seal of Good Local Governance',
-    frequency: 'Annual',
-    status: 'Live',
-    color: 'emerald',
-    periods: ['annual'],
-  },
-  {
     id: 'future',
-    title: 'Other future reports',
+    title: 'Other',
     description: 'Reserved for future schemas',
     frequency: 'To be configured',
     status: 'Reserved',
@@ -141,7 +156,7 @@ function QuarterlyComplianceCardStats({
 }) {
   if (!isApplicable) {
     return (
-      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+      <div className={statsMessageClassName}>
         {notApplicableMessage}
       </div>
     )
@@ -149,13 +164,13 @@ function QuarterlyComplianceCardStats({
 
   if (isLoading) {
     return (
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      <div className={statsGridClassName}>
         {['Full Compliant', 'Partial Compliant', 'None Compliant'].map((title) => (
-          <div key={title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <div key={title} className={miniStatClassName}>
+            <div className={miniStatLabelClassName}>
               {title}
             </div>
-            <div className="mt-1 text-sm font-semibold text-slate-900">Loading...</div>
+            <div className={miniStatValueClassName}>Loading...</div>
           </div>
         ))}
       </div>
@@ -164,23 +179,23 @@ function QuarterlyComplianceCardStats({
 
   if (stats?.mode === 'status') {
     return (
-      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+      <div className={`mt-4 ${miniStatClassName}`}>
+        <div className={miniStatLabelClassName}>
           Status
         </div>
-        <div className="mt-1 text-sm font-semibold text-slate-900">{stats.status}</div>
+        <div className={miniStatValueClassName}>{stats.status}</div>
       </div>
     )
   }
 
   return (
-    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+    <div className={statsGridClassName}>
       {(stats?.cards ?? []).map((card) => (
-        <div key={card.title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <div key={card.title} className={miniStatClassName}>
+          <div className={miniStatLabelClassName}>
             {card.title}
           </div>
-          <div className="mt-1 text-sm font-semibold text-slate-900">{card.value}</div>
+          <div className={miniStatValueClassName}>{card.value}</div>
         </div>
       ))}
     </div>
@@ -190,7 +205,7 @@ function QuarterlyComplianceCardStats({
 function SGLGCardStats({ stats, isLoading, isApplicable, isSelectedLgu }) {
   if (!isApplicable) {
     return (
-      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+      <div className={statsMessageClassName}>
         Not applicable for Barangay, Quarter, or Month filter.
       </div>
     )
@@ -198,13 +213,13 @@ function SGLGCardStats({ stats, isLoading, isApplicable, isSelectedLgu }) {
 
   if (isLoading) {
     return (
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      <div className={statsGridClassName}>
         {['Passed', 'Failed', 'Rate'].map((title) => (
-          <div key={title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+          <div key={title} className={miniStatClassName}>
+            <div className={miniStatLabelClassName}>
               {title}
             </div>
-            <div className="mt-1 text-sm font-semibold text-slate-900">Loading...</div>
+            <div className={miniStatValueClassName}>Loading...</div>
           </div>
         ))}
       </div>
@@ -213,7 +228,7 @@ function SGLGCardStats({ stats, isLoading, isApplicable, isSelectedLgu }) {
 
   if (!stats?.totalRecords) {
     return (
-      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+      <div className={statsMessageClassName}>
         No SGLG data found for the selected filters.
       </div>
     )
@@ -231,13 +246,13 @@ function SGLGCardStats({ stats, isLoading, isApplicable, isSelectedLgu }) {
       ]
 
   return (
-    <div className="mt-4 grid gap-2 sm:grid-cols-3">
+    <div className={statsGridClassName}>
       {cards.map((card) => (
-        <div key={card.title} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+        <div key={card.title} className={miniStatClassName}>
+          <div className={miniStatLabelClassName}>
             {card.title}
           </div>
-          <div className="mt-1 text-sm font-semibold text-slate-900">{card.value}</div>
+          <div className={miniStatValueClassName}>{card.value}</div>
         </div>
       ))}
     </div>
@@ -384,13 +399,13 @@ export default function Overview({ onNavigate }) {
         </section>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {reportModules.map((report) => {
           const reportState = getReportState(report, filters)
 
           return (
-            <Card key={report.id} className="border border-slate-200 bg-white shadow-panel">
-              <div className="flex items-start justify-between gap-3">
+            <Card key={report.id} className="flex h-full min-h-[306px] flex-col border border-slate-200 bg-white shadow-panel">
+              <div className={reportHeaderClassName}>
                 <div>
                   <h3 className="text-lg font-semibold text-slate-950">{report.title}</h3>
                   <p className="mt-1 text-sm text-slate-600">{report.description}</p>
@@ -433,7 +448,7 @@ export default function Overview({ onNavigate }) {
                   isSelectedLgu={Boolean(sglgStatsFilters.province || sglgStatsFilters.city)}
                 />
               ) : null}
-              <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
+              <div className="mt-auto flex min-h-[82px] items-end justify-between gap-3 border-t border-slate-100 pt-4">
                 <div>
                   <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
                     Frequency

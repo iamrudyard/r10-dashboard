@@ -6,6 +6,7 @@ import {
   getSKFPDLocationStats,
   getSKFPDQuarterlyTrend,
   getSKFPDScoreByProvince,
+  getSKFPDStatusByProvince,
   getSKFPDSummary,
   getSKFPDTable,
 } from '../services/skfpdService'
@@ -108,6 +109,24 @@ export function useSKFPDScoreByProvince(filters, options = {}) {
   return useQuery({
     queryKey: ['skfpd-score-by-province', filters.year, filters.quarter],
     queryFn: () => getSKFPDScoreByProvince(filters),
+    enabled: requireLocation ? hasLocationFilter(filters) : true,
+    ...QUERY_OPTIONS,
+  })
+}
+
+export function useSKFPDStatusByProvince(filters, options = {}) {
+  const requireLocation = options.requireLocation ?? true
+
+  return useQuery({
+    queryKey: [
+      'skfpd-status-by-province',
+      filters.year,
+      filters.quarter,
+      filters.province,
+      filters.city,
+      filters.barangay,
+    ],
+    queryFn: () => getSKFPDStatusByProvince(filters),
     enabled: requireLocation ? hasLocationFilter(filters) : true,
     ...QUERY_OPTIONS,
   })

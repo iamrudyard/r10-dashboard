@@ -6,6 +6,7 @@ import {
   getLTRPPQuarterlyTrend,
   getLTRPPRemarks,
   getLTRPPScoreByProvince,
+  getLTRPPStatusByProvince,
   getLTRPPSummary,
   getLTRPPTable,
   getOverviewLTRPPStats,
@@ -104,6 +105,23 @@ export function useLTRPPScoreByProvince(filters, options = {}) {
   return useQuery({
     queryKey: ['ltrpp-score-by-province', filters.year, filters.quarter],
     queryFn: () => getLTRPPScoreByProvince(filters),
+    enabled: requireLocation ? hasLocationFilter(filters) : true,
+    ...QUERY_OPTIONS,
+  })
+}
+
+export function useLTRPPStatusByProvince(filters, options = {}) {
+  const requireLocation = options.requireLocation ?? true
+
+  return useQuery({
+    queryKey: [
+      'ltrpp-status-by-province',
+      filters.year,
+      filters.quarter,
+      filters.province,
+      filters.city,
+    ],
+    queryFn: () => getLTRPPStatusByProvince(filters),
     enabled: requireLocation ? hasLocationFilter(filters) : true,
     ...QUERY_OPTIONS,
   })

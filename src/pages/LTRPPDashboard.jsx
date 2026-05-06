@@ -5,7 +5,7 @@ import SummaryCard from '../components/cards/SummaryCard'
 import DocumentCompletionChart from '../components/charts/DocumentCompletionChart'
 import QuarterlyTrendChart from '../components/charts/QuarterlyTrendChart'
 import ScoreByProvinceChart from '../components/charts/ScoreByProvinceChart'
-import StatusDonutChart from '../components/charts/StatusDonutChart'
+import ProvinceStatusColumnChart from '../components/charts/ProvinceStatusColumnChart'
 import LocationFilters from '../components/filters/LocationFilters'
 import LTRPPTable from '../components/tables/LTRPPTable'
 import {
@@ -15,6 +15,7 @@ import {
   useLTRPPQuarterlyTrend,
   useLTRPPRemarks,
   useLTRPPScoreByProvince,
+  useLTRPPStatusByProvince,
   useLTRPPSummary,
   useLTRPPTable,
 } from '../hooks/useLTRPPQueries'
@@ -26,6 +27,11 @@ const defaultFilters = {
   year: '2026',
   quarter: '',
 }
+
+const ltrppStatusSeries = [
+  { label: 'Compliance', value: 'Compliance' },
+  { label: 'Non Compliance', value: 'Non Compliance' },
+]
 
 function LoadingState() {
   return (
@@ -94,13 +100,19 @@ export default function LTRPPDashboard({ initialFilters }) {
     [initialFilters],
   )
   const [filters, setFilters] = useState(normalizedInitialFilters)
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState('')
+  const [selectedChartFilter, setSelectedChartFilter] = useState({
+    province: '',
+    city: '',
+    locationLabel: '',
+    status: '',
+    statusLabel: '',
+  })
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(25)
 
   useEffect(() => {
     setFilters(normalizedInitialFilters)
-    setSelectedStatusFilter('')
+    setSelectedChartFilter({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
     setPage(0)
   }, [normalizedInitialFilters])
 
@@ -108,9 +120,9 @@ export default function LTRPPDashboard({ initialFilters }) {
     () => ({
       year: filters.year,
       quarter: filters.quarter,
-      province: filters.provinceHuc,
-      city: filters.cityMunName,
-      status: selectedStatusFilter,
+      province: selectedChartFilter.province || filters.provinceHuc,
+      city: selectedChartFilter.city || filters.cityMunName,
+      status: selectedChartFilter.status,
       page,
       pageSize,
     }),
@@ -119,7 +131,9 @@ export default function LTRPPDashboard({ initialFilters }) {
       filters.quarter,
       filters.provinceHuc,
       filters.cityMunName,
-      selectedStatusFilter,
+      selectedChartFilter.province,
+      selectedChartFilter.city,
+      selectedChartFilter.status,
       page,
       pageSize,
     ],
@@ -138,12 +152,16 @@ export default function LTRPPDashboard({ initialFilters }) {
   const selectedLguPath = [filters.provinceHuc, filters.cityMunName]
     .filter(Boolean)
     .join(' > ') || 'All LGU'
+  const statusChartTitle = filters.provinceHuc
+    ? 'LPTRPP Status by City/Municipality'
+    : 'LPTRPP Status by Province/HUC'
 
   const geoOptionsQuery = useLTRPPGeoOptions()
   const summaryQuery = useLTRPPSummary(chartFilters, { requireLocation: false })
   const locationStatsQuery = useLTRPPLocationStats(chartFilters, { requireLocation: false })
   const documentsQuery = useLTRPPDocumentCompletion(chartFilters, { requireLocation: false })
   const scoreByProvinceQuery = useLTRPPScoreByProvince(chartFilters, { requireLocation: false })
+  const statusByProvinceQuery = useLTRPPStatusByProvince(chartFilters, { requireLocation: false })
   const quarterlyTrendQuery = useLTRPPQuarterlyTrend(chartFilters, { requireLocation: false })
   const remarksQuery = useLTRPPRemarks(chartFilters, { requireLocation: false })
   const tableQuery = useLTRPPTable(queryFilters, { requireLocation: false })
@@ -153,6 +171,7 @@ export default function LTRPPDashboard({ initialFilters }) {
     documentsQuery.isLoading ||
     locationStatsQuery.isLoading ||
     scoreByProvinceQuery.isLoading ||
+    statusByProvinceQuery.isLoading ||
     quarterlyTrendQuery.isLoading ||
     tableQuery.isLoading
 
@@ -161,6 +180,7 @@ export default function LTRPPDashboard({ initialFilters }) {
     locationStatsQuery.error ||
     documentsQuery.error ||
     scoreByProvinceQuery.error ||
+    statusByProvinceQuery.error ||
     quarterlyTrendQuery.error ||
     remarksQuery.error ||
     tableQuery.error
@@ -178,13 +198,14 @@ export default function LTRPPDashboard({ initialFilters }) {
     locationStatsQuery.isFetching ||
     documentsQuery.isFetching ||
     scoreByProvinceQuery.isFetching ||
+    statusByProvinceQuery.isFetching ||
     quarterlyTrendQuery.isFetching ||
     remarksQuery.isFetching ||
     tableQuery.isFetching
 
   const handleFilterChange = (nextFilters) => {
     setPage(0)
-    setSelectedStatusFilter('')
+    setSelectedChartFilter({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
     setFilters({
       provinceHuc: nextFilters.provinceHuc ?? '',
       cityMunName: nextFilters.cityMunName ?? '',
@@ -193,9 +214,15 @@ export default function LTRPPDashboard({ initialFilters }) {
     })
   }
 
-  const handleStatusFilterChange = (status) => {
+  const handleChartFilterChange = (selection) => {
     setPage(0)
-    setSelectedStatusFilter((current) => (current === status ? '' : status))
+    setSelectedChartFilter((current) =>
+      current.province === selection.province &&
+      current.city === selection.city &&
+      current.status === selection.status
+        ? { province: '', city: '', locationLabel: '', status: '', statusLabel: '' }
+        : selection,
+    )
   }
 
   const handleRefresh = () => {
@@ -204,6 +231,7 @@ export default function LTRPPDashboard({ initialFilters }) {
     queryClient.invalidateQueries({ queryKey: ['ltrpp-location-stats'] })
     queryClient.invalidateQueries({ queryKey: ['ltrpp-document-completion'] })
     queryClient.invalidateQueries({ queryKey: ['ltrpp-score-by-province'] })
+    queryClient.invalidateQueries({ queryKey: ['ltrpp-status-by-province'] })
     queryClient.invalidateQueries({ queryKey: ['ltrpp-quarterly-trend'] })
     queryClient.invalidateQueries({ queryKey: ['ltrpp-remarks'] })
     queryClient.invalidateQueries({ queryKey: ['ltrpp-table'] })
@@ -252,10 +280,13 @@ export default function LTRPPDashboard({ initialFilters }) {
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
-            <StatusDonutChart
-              statusCounts={summary?.statusCounts ?? {}}
-              selectedStatus={selectedStatusFilter}
-              onStatusSelect={handleStatusFilterChange}
+            <ProvinceStatusColumnChart
+              data={statusByProvinceQuery.data ?? []}
+              statuses={ltrppStatusSeries}
+              title={statusChartTitle}
+              selectedFilter={selectedChartFilter}
+              onFilterSelect={handleChartFilterChange}
+              colors={['#069c56', '#d3212c']}
             />
             <DocumentCompletionChart
               documents={documentCompletion}
@@ -272,8 +303,10 @@ export default function LTRPPDashboard({ initialFilters }) {
             totalRecords={tableData.count}
             page={page}
             pageSize={pageSize}
-            activeStatusFilter={selectedStatusFilter}
-            onClearStatusFilter={() => handleStatusFilterChange(selectedStatusFilter)}
+            activeStatusFilter={selectedChartFilter.statusLabel}
+            onClearStatusFilter={() =>
+              handleChartFilterChange({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
+            }
             onPageChange={setPage}
             onPageSizeChange={(nextPageSize) => {
               setPage(0)

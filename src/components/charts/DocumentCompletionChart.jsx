@@ -18,16 +18,23 @@ export default function DocumentCompletionChart({
       fontFamily: 'Aptos, Segoe UI, sans-serif',
     },
     colors: ['#2f7d64'],
+    grid: {
+      show: false,
+    },
     plotOptions: {
       bar: {
         borderRadius: 5,
         columnWidth: '48%',
+        dataLabels: {
+          position: 'top',
+        },
       },
     },
     dataLabels: {
       enabled: true,
       formatter: (value) => `${value}%`,
-      style: { fontSize: '11px' },
+      offsetY: -18,
+      style: { colors: ['#0f172a'], fontSize: '11px', fontWeight: 700 },
     },
     xaxis: {
       categories: documents.map((item) => item.label),
@@ -39,9 +46,9 @@ export default function DocumentCompletionChart({
     },
     yaxis: {
       min: 0,
-      max: 100,
+      max: 110,
       labels: {
-        formatter: (value) => `${value}%`,
+        show: false,
       },
     },
     tooltip: {

@@ -32,6 +32,9 @@ export default function QuarterlyTrendChart({ data, selectedYear, selectedLguPat
       fontFamily: 'Aptos, Segoe UI, sans-serif',
     },
     colors: ['#2563eb'],
+    grid: {
+      show: false,
+    },
     stroke: {
       curve: 'smooth',
       width: 3,
@@ -56,7 +59,7 @@ export default function QuarterlyTrendChart({ data, selectedYear, selectedLguPat
       tickAmount: 3,
       forceNiceScale: false,
       labels: {
-        formatter: (value) => value.toFixed(0),
+        show: false,
       },
     },
     tooltip: {

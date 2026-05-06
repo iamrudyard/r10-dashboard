@@ -75,6 +75,23 @@ const averageScore = (rows) => {
   return Number((total / rows.length).toFixed(1))
 }
 
+const sortProvinceScores = (rows) =>
+  [...rows].sort((left, right) => {
+    if (left.averageScore === null && right.averageScore === null) {
+      return left.province.localeCompare(right.province)
+    }
+
+    if (left.averageScore === null) {
+      return 1
+    }
+
+    if (right.averageScore === null) {
+      return -1
+    }
+
+    return right.averageScore - left.averageScore || left.province.localeCompare(right.province)
+  })
+
 const uniqueRowsBy = (rows, getKey) => {
   const map = new Map()
 
@@ -107,6 +124,61 @@ const getStatusCounts = (rows) =>
     counts[status] = (counts[status] ?? 0) + 1
     return counts
   }, {})
+
+const LTRPP_STATUS_SERIES = [
+  { label: 'Compliance' },
+  { label: 'Non Compliance' },
+]
+
+const getStatusLocationKey = (row, filters = {}) => {
+  if (filters.province) {
+    return normalizeOption(row.city_mun_name) || normalizeOption(row.province_huc)
+  }
+
+  return normalizeOption(row.province_huc)
+}
+
+const buildStatusByProvince = (locationRows, rows, filters = {}) => {
+  const locations = filters.province
+    ? uniqueSorted(locationRows.map((row) => row.city_mun_name || row.province_huc)).map((city) => ({
+        label: city,
+        province: filters.province,
+        city,
+      }))
+    : uniqueSorted(locationRows.map((row) => row.province_huc)).map((province) => ({
+        label: province,
+        province,
+        city: '',
+      }))
+  const countsByProvince = new Map(
+    locations.map((location) => [
+      normalizeText(location.label),
+      LTRPP_STATUS_SERIES.reduce(
+        (counts, status) => ({
+          ...counts,
+          [status.label]: 0,
+        }),
+        {},
+      ),
+    ]),
+  )
+
+  rows.forEach((row) => {
+    const locationKey = normalizeText(getStatusLocationKey(row, filters))
+    const status = getLTRPPStatus(row)
+
+    if (!locationKey || !countsByProvince.has(locationKey) || countsByProvince.get(locationKey)[status] === undefined) {
+      return
+    }
+
+    countsByProvince.get(locationKey)[status] += 1
+  })
+
+  return locations.map((location) => ({
+    ...location,
+    counts: countsByProvince.get(normalizeText(location.label)),
+  }))
+}
 
 const getSelectedIncomeClass = (rows, filters = {}) => {
   const rowsWithIncomeClass = rows.filter((row) => normalizeOption(row.income_class))
@@ -445,10 +517,39 @@ export async function getLTRPPScoreByProvince(filters = {}) {
     return groups
   }, {})
 
-  return provinceHucs.map((province) => ({
-    province,
-    averageScore: averageScore(scoresByProvince[province] ?? []),
-  }))
+  return sortProvinceScores(
+    provinceHucs.map((province) => ({
+      province,
+      averageScore: averageScore(scoresByProvince[province] ?? []),
+    })),
+  )
+}
+
+export async function getLTRPPStatusByProvince(filters = {}) {
+  const [geoRows, detailRows] = await Promise.all([
+    fetchAllPages(() => {
+      let query = supabase
+        .from('lib_geographic_units')
+        .select('province_huc, city_mun_name')
+        .is('barangay_name', null)
+        .not('income_class', 'is', null)
+        .order('province_huc', { ascending: true, nullsFirst: false })
+        .order('city_mun_name', { ascending: true, nullsFirst: false })
+
+      if (filters.province) {
+        query = query.eq('province_huc', filters.province)
+      }
+
+      if (filters.city) {
+        query = query.eq('city_mun_name', filters.city)
+      }
+
+      return query
+    }),
+    getLTRPPRows(filters),
+  ])
+
+  return buildStatusByProvince(geoRows, detailRows, filters)
 }
 
 export async function getLTRPPQuarterlyTrend(filters = {}) {

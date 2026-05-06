@@ -187,6 +187,80 @@ const getStatusCounts = (rows) =>
     { full: 0, partial: 0, none: 0 },
   )
 
+const BFDP_STATUS_SERIES = [
+  { group: 'full', label: STATUS_LABELS.full },
+  { group: 'partial', label: STATUS_LABELS.partial },
+  { group: 'none', label: STATUS_LABELS.none },
+]
+
+const sortProvinceScores = (rows) =>
+  [...rows].sort((left, right) => {
+    if (left.averageScore === null && right.averageScore === null) {
+      return left.province.localeCompare(right.province)
+    }
+
+    if (left.averageScore === null) {
+      return 1
+    }
+
+    if (right.averageScore === null) {
+      return -1
+    }
+
+    return right.averageScore - left.averageScore || left.province.localeCompare(right.province)
+  })
+
+const getStatusLocationKey = (row, filters = {}) => {
+  if (filters.locationLevel === 'city') {
+    return normalizeOption(row.city_mun_name) || normalizeOption(row.province_huc)
+  }
+
+  return normalizeOption(row.province_huc)
+}
+
+const buildStatusByProvince = (locationRows, rows, filters = {}) => {
+  const locations = filters.locationLevel === 'city'
+    ? uniqueSorted(locationRows.map((row) => row.city_mun_name)).map((city) => ({
+        label: city,
+        province: filters.province,
+        city,
+      }))
+    : uniqueSorted(locationRows.map((row) => row.province_huc)).map((province) => ({
+        label: province,
+        province,
+        city: '',
+      }))
+  const countsByProvince = new Map(
+    locations.map((location) => [
+      normalizeText(location.label),
+      BFDP_STATUS_SERIES.reduce(
+        (counts, status) => ({
+          ...counts,
+          [status.label]: 0,
+        }),
+        {},
+      ),
+    ]),
+  )
+
+  rows.forEach((row) => {
+    const locationKey = normalizeText(getStatusLocationKey(row, filters))
+    const group = getStatusGroup(row.status)
+    const status = BFDP_STATUS_SERIES.find((item) => item.group === group)
+
+    if (!locationKey || !status || !countsByProvince.has(locationKey)) {
+      return
+    }
+
+    countsByProvince.get(locationKey)[status.label] += 1
+  })
+
+  return locations.map((location) => ({
+    ...location,
+    counts: countsByProvince.get(normalizeText(location.label)),
+  }))
+}
+
 function applyCommonFilters(query, filters = {}, includeLocation = true) {
   if (filters.year) {
     query = query.eq('year', Number(filters.year))
@@ -679,10 +753,56 @@ export async function getBFDPScoreByProvince(filters = {}) {
     return groups
   }, {})
 
-  return provinceHucs.map((province) => ({
-    province,
-    averageScore: averageScore(scoresByProvince[province] ?? []),
-  }))
+  return sortProvinceScores(
+    provinceHucs.map((province) => ({
+      province,
+      averageScore: averageScore(scoresByProvince[province] ?? []),
+    })),
+  )
+}
+
+export async function getBFDPStatusByProvince(filters = {}) {
+  const useCityLevel = Boolean(filters.city)
+  const [geoRows, detailRows] = await Promise.all([
+    fetchAllPages(() => {
+      let query = supabase
+        .from('lib_geographic_units')
+        .select('province_huc, city_mun_name')
+        .is('barangay_name', null)
+        .not('income_class', 'is', null)
+        .order('province_huc', { ascending: true, nullsFirst: false })
+        .order('city_mun_name', { ascending: true, nullsFirst: false })
+
+      if (useCityLevel && filters.province) {
+        query = query.eq('province_huc', filters.province)
+      }
+
+      if (useCityLevel) {
+        query = query.not('city_mun_name', 'is', null)
+      }
+
+      return query
+    }),
+    fetchAllPages(() => {
+      let query = supabase.from('v_bfdp_details').select('province_huc, city_mun_name, status, year, quarter')
+      query = applyCommonFilters(query, {
+        year: filters.year,
+        quarter: filters.quarter,
+        province: useCityLevel ? filters.province : '',
+      })
+
+      if (useCityLevel) {
+        query = query.not('city_mun_name', 'is', null)
+      }
+
+      return query.order('province_huc', { ascending: true, nullsFirst: false })
+    }),
+  ])
+
+  return buildStatusByProvince(geoRows, detailRows, {
+    ...filters,
+    locationLevel: useCityLevel ? 'city' : 'province',
+  })
 }
 
 export async function getBFDPQuarterlyTrend(filters = {}) {
@@ -716,7 +836,17 @@ export async function getBFDPTable(filters = {}) {
   query = applyCommonFilters(query, filters)
 
   if (filters.status) {
-    query = query.eq('status', filters.status)
+    const statusGroup = getStatusGroup(filters.status)
+
+    if (statusGroup === 'full') {
+      query = query.ilike('status', '%full%')
+    } else if (statusGroup === 'partial') {
+      query = query.ilike('status', '%partial%')
+    } else if (statusGroup === 'none') {
+      query = query.or('status.ilike.%none%,status.ilike.%non%')
+    } else {
+      query = query.eq('status', filters.status)
+    }
   }
 
   const { data, error, count } = await query

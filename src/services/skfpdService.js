@@ -76,6 +76,23 @@ const averageScore = (values) => {
   return Number((total / numericScores.length).toFixed(1))
 }
 
+const sortProvinceScores = (rows) =>
+  [...rows].sort((left, right) => {
+    if (left.averageScore === null && right.averageScore === null) {
+      return left.province.localeCompare(right.province)
+    }
+
+    if (left.averageScore === null) {
+      return 1
+    }
+
+    if (right.averageScore === null) {
+      return -1
+    }
+
+    return right.averageScore - left.averageScore || left.province.localeCompare(right.province)
+  })
+
 const normalizeText = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '')
 
 const isBlank = (value) => value === null || value === undefined || String(value).trim() === ''
@@ -201,6 +218,63 @@ const getStatusCounts = (rows) =>
       [STATUS_LABELS.none]: 0,
     },
   )
+
+const SKFPD_STATUS_SERIES = [
+  { group: 'full', label: STATUS_LABELS.full },
+  { group: 'partial', label: STATUS_LABELS.partial },
+  { group: 'none', label: STATUS_LABELS.none },
+]
+
+const getStatusLocationKey = (row, filters = {}) => {
+  if (filters.province) {
+    return normalizeOption(row.city_mun_name) || normalizeOption(row.province_huc)
+  }
+
+  return normalizeOption(row.province_huc)
+}
+
+const buildStatusByProvince = (locationRows, rows, filters = {}) => {
+  const locations = filters.province
+    ? uniqueSorted(locationRows.map((row) => row.city_mun_name || row.province_huc)).map((city) => ({
+        label: city,
+        province: filters.province,
+        city,
+      }))
+    : uniqueSorted(locationRows.map((row) => row.province_huc)).map((province) => ({
+        label: province,
+        province,
+        city: '',
+      }))
+  const countsByProvince = new Map(
+    locations.map((location) => [
+      normalizeText(location.label),
+      SKFPD_STATUS_SERIES.reduce(
+        (counts, status) => ({
+          ...counts,
+          [status.label]: 0,
+        }),
+        {},
+      ),
+    ]),
+  )
+
+  rows.forEach((row) => {
+    const locationKey = normalizeText(getStatusLocationKey(row, filters))
+    const group = getStatusGroup(row.status)
+    const status = SKFPD_STATUS_SERIES.find((item) => item.group === group)
+
+    if (!locationKey || !status || !countsByProvince.has(locationKey)) {
+      return
+    }
+
+    countsByProvince.get(locationKey)[status.label] += 1
+  })
+
+  return locations.map((location) => ({
+    ...location,
+    counts: countsByProvince.get(normalizeText(location.label)),
+  }))
+}
 
 const getPolicyBoardScopeLabel = (filters = {}) => {
   if (filters.barangay) {
@@ -572,10 +646,39 @@ export async function getSKFPDScoreByProvince(filters = {}) {
     return groups
   }, {})
 
-  return provinceHucs.map((province) => ({
-    province,
-    averageScore: averageScore(scoresByProvince[province] ?? []),
-  }))
+  return sortProvinceScores(
+    provinceHucs.map((province) => ({
+      province,
+      averageScore: averageScore(scoresByProvince[province] ?? []),
+    })),
+  )
+}
+
+export async function getSKFPDStatusByProvince(filters = {}) {
+  const [geoRows, detailRows] = await Promise.all([
+    fetchAllPages(() => {
+      let query = supabase
+        .from('lib_geographic_units')
+        .select('province_huc, city_mun_name')
+        .is('barangay_name', null)
+        .not('income_class', 'is', null)
+        .order('province_huc', { ascending: true, nullsFirst: false })
+        .order('city_mun_name', { ascending: true, nullsFirst: false })
+
+      if (filters.province) {
+        query = query.eq('province_huc', filters.province)
+      }
+
+      if (filters.city) {
+        query = query.eq('city_mun_name', filters.city)
+      }
+
+      return query
+    }),
+    getSKFPDRows(filters),
+  ])
+
+  return buildStatusByProvince(geoRows, detailRows, filters)
 }
 
 export async function getSKFPDQuarterlyTrend(filters = {}) {
@@ -604,7 +707,17 @@ export async function getSKFPDTable(filters = {}) {
   query = applyLguIdFilter(query, lguIds)
 
   if (filters.status) {
-    query = query.eq('status', filters.status)
+    const statusGroup = getStatusGroup(filters.status)
+
+    if (statusGroup === 'full') {
+      query = query.ilike('status', '%full%')
+    } else if (statusGroup === 'partial') {
+      query = query.ilike('status', '%partial%')
+    } else if (statusGroup === 'none') {
+      query = query.or('status.ilike.%none%,status.ilike.%non%')
+    } else {
+      query = query.eq('status', filters.status)
+    }
   }
 
   const { data, error, count } = await query
