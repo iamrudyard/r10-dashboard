@@ -2,7 +2,20 @@
 
 Changes are generated from the Git commit log and grouped by commit date.
 
+
+## 2026-05-07
+
+- `ca635c0` update: package.json
 ## 2026-05-06
+- `f89845c` Enhance CHANGELOG with detailed feature updates
+- `5416782` del: update-changelog.yml
+- `8a54c4c` Remove GitHub Actions workflow for updating CHANGELOG.md
+- `fc0e2a6` Merge branch 'main' of https://github.com/iamrudyard/r10-dashboard
+- `8cec543` del: doc_check.yml
+- `fba486a` Revise CHANGELOG.md for recent dashboard features
+- `336ad31` Delete .github/workflows/docs-check.yml
+- `2917ba3` Add GitHub Actions workflow to update changelog
+- `5a48abc` feat: implement automated changelog generation and update documentation workflow
 - `562acf2` feat: enhance dashboard filtering and scoring by adding city/municipality support
 - `98f024c` feat: update CHANGELOG.md with detailed feature updates and commit history
 - `d9d18d3` changelog
