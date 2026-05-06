@@ -2,3 +2,41 @@
 
 Changes are generated from the Git commit log and grouped by commit date.
 
+## 2026-05-06
+
+- `98f024c` feat: update CHANGELOG.md with detailed feature updates and commit history
+- `d9d18d3` changelog
+- `ce327ba` feat: recreate CHANGELOG.md with detailed feature updates for the Region 10 Report Analytics Dashboard
+- `242988c` feat: update README and add CHANGELOG for SGLG and LPTRPP dashboard support
+- `6bce4ee` feat: add ProvinceStatusColumnChart to SGLG and SKFPD dashboards
+
+## 2026-05-05
+
+- `70d2cfd` add lptrpp components
+- `81f0c07` add year 2024 in overview
+- `0bc4967` added SKFPD component and refactor sglg and bfdp components
+
+## 2026-05-04
+
+- `978e715` Merge branch 'main' of https://github.com/iamrudyard/r10-dashboard
+- `06678d8` my changes locally
+
+## 2026-05-02
+
+- `6a52e9d` update sglg
+
+## 2026-04-30
+
+- `53363ff` adding sglg compoent
+- `fb0e4f8` Refactor BFDP components to support status filtering and enhance chart tooltips
+- `e36d8f6` Merge branch 'main' of https://github.com/iamrudyard/r10-dashboard
+- `de784cc` update overview and bfdp
+- `3275c86` Update vite.config.js
+- `6e5acbe` Add environment variable for Supabase URL
+
+## 2026-04-29
+
+- `4e3b394` update config for vercel
+- `fc35612` update
+- `c4d5e0e` first upload file
+- `ff7429c` Initial commit
