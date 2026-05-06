@@ -622,34 +622,56 @@ export async function getSKFPDLocationStats(filters = {}) {
 }
 
 export async function getSKFPDScoreByProvince(filters = {}) {
+  const useCityLevel = Boolean(filters.province && filters.city)
   const [geoRows, detailRows] = await Promise.all([
-    fetchAllPages(() =>
-      supabase
+    fetchAllPages(() => {
+      let query = supabase
         .from('lib_geographic_units')
-        .select('province_huc')
+        .select('province_huc, city_mun_name')
         .is('barangay_name', null)
         .not('income_class', 'is', null)
-        .order('province_huc', { ascending: true, nullsFirst: false }),
-    ),
-    getSKFPDRows(filters, false),
+        .order('province_huc', { ascending: true, nullsFirst: false })
+        .order('city_mun_name', { ascending: true, nullsFirst: false })
+
+      if (useCityLevel) {
+        query = query.eq('province_huc', filters.province).not('city_mun_name', 'is', null)
+      }
+
+      return query
+    }),
+    getSKFPDRows({ year: filters.year, quarter: filters.quarter }, false),
   ])
 
-  const provinceHucs = uniqueSorted(geoRows.map((row) => row.province_huc))
-  const scoresByProvince = detailRows.reduce((groups, row) => {
-    const province = normalizeOption(row.province_huc) || 'Unspecified'
-
-    if (!groups[province]) {
-      groups[province] = []
+  const locations = useCityLevel
+    ? uniqueSorted(geoRows.map((row) => row.city_mun_name))
+    : uniqueSorted(geoRows.map((row) => row.province_huc))
+  const scoresByLocation = detailRows.reduce((groups, row) => {
+    if (useCityLevel && normalizeText(row.province_huc) !== normalizeText(filters.province)) {
+      return groups
     }
 
-    groups[province].push(row.score)
+    const location = useCityLevel
+      ? normalizeOption(row.city_mun_name)
+      : normalizeOption(row.province_huc) || 'Unspecified'
+
+    if (!location) {
+      return groups
+    }
+
+    if (!groups[location]) {
+      groups[location] = []
+    }
+
+    groups[location].push(row.score)
     return groups
   }, {})
 
   return sortProvinceScores(
-    provinceHucs.map((province) => ({
-      province,
-      averageScore: averageScore(scoresByProvince[province] ?? []),
+    locations.map((location) => ({
+      province: location,
+      label: location,
+      city: useCityLevel ? location : '',
+      averageScore: averageScore(scoresByLocation[location] ?? []),
     })),
   )
 }

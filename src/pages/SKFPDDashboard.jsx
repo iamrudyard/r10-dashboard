@@ -131,6 +131,9 @@ export default function SKFPDDashboard({ initialFilters }) {
   const statusChartTitle = filters.provinceHuc
     ? 'SKFPD Status by City/Municipality'
     : 'SKFPD Status by Province/HUC'
+  const scoreChartTitle = filters.provinceHuc && filters.cityMunName
+    ? 'Avg Score by City/Municipality'
+    : 'Avg Score by Province/HUC'
 
   const geoOptionsQuery = useSKFPDGeoOptions()
   const summaryQuery = useSKFPDSummary(chartFilters, { requireLocation: false })
@@ -241,7 +244,7 @@ export default function SKFPDDashboard({ initialFilters }) {
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
-            <ScoreByProvinceChart data={scoreByProvinceQuery.data ?? []} />
+            <ScoreByProvinceChart data={scoreByProvinceQuery.data ?? []} title={scoreChartTitle} />
             <QuarterlyTrendChart
               data={quarterlyTrendQuery.data ?? []}
               selectedYear={filters.year}

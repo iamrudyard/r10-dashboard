@@ -18,6 +18,7 @@ React + Vite dashboard for Region 10 government report analytics. The app uses S
 - Province/HUC, City/Municipality, Barangay, Year, and Quarter filtering for quarterly report dashboards.
 - SGLG dashboard with annual filters, overall rating summaries, rating by Province/HUC, governance area charts, sub-indicator charts, and detailed records.
 - BFDP, SKFPD, and LPTRPP dashboards with summary cards, average score by Province/HUC, quarterly trends, status by location, document completion charts, and detailed tables.
+- BFDP and SKFPD average score charts switch to City/Municipality view when both Province/HUC and City/Municipality filters are selected.
 - Clickable status/rating bars that filter detailed records and related charts.
 - Province/HUC status/rating charts that keep regional context while highlighting the selected Province/HUC.
 - Score-by-Province/HUC charts sorted by average score.

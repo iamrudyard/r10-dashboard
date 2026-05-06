@@ -140,6 +140,9 @@ export default function BFDPDashboard({ initialFilters }) {
   const statusChartTitle = filters.provinceHuc && filters.cityMunName
     ? 'BFDP Status by City/Municipality'
     : 'BFDP Status by Province/HUC'
+  const scoreChartTitle = filters.provinceHuc && filters.cityMunName
+    ? 'Avg Score by City/Municipality'
+    : 'Avg Score by Province/HUC'
   const highlightedStatusLocation = selectedChartFilter.locationLabel || filters.cityMunName || filters.provinceHuc
 
   const geoOptionsQuery = useGeoOptions()
@@ -251,7 +254,7 @@ export default function BFDPDashboard({ initialFilters }) {
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
-            <ScoreByProvinceChart data={scoreByProvinceQuery.data ?? []} />
+            <ScoreByProvinceChart data={scoreByProvinceQuery.data ?? []} title={scoreChartTitle} />
             <QuarterlyTrendChart
               data={quarterlyTrendQuery.data ?? []}
               selectedYear={filters.year}

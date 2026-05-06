@@ -34,7 +34,7 @@ export default function ScoreByProvinceChart({ data, title = 'Avg Score by Provi
       style: { colors: ['#0f172a'], fontSize: '11px', fontWeight: 700 },
     },
     xaxis: {
-      categories: data.map((item) => item.province),
+      categories: data.map((item) => item.label ?? item.city ?? item.province),
       labels: {
         rotate: -35,
         trim: true,

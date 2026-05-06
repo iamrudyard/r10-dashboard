@@ -122,7 +122,7 @@ export function useBFDPScoreByProvince(filters, options = {}) {
   const requireLocation = options.requireLocation ?? true
 
   return useQuery({
-    queryKey: ['bfdp-score-by-province', filters.year, filters.quarter],
+    queryKey: ['bfdp-score-by-province', filters.year, filters.quarter, filters.province, filters.city],
     queryFn: () => getBFDPScoreByProvince(filters),
     enabled: requireLocation ? hasLocationFilter(filters) : true,
     ...QUERY_OPTIONS,

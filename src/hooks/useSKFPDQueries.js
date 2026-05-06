@@ -107,7 +107,7 @@ export function useSKFPDScoreByProvince(filters, options = {}) {
   const requireLocation = options.requireLocation ?? true
 
   return useQuery({
-    queryKey: ['skfpd-score-by-province', filters.year, filters.quarter],
+    queryKey: ['skfpd-score-by-province', filters.year, filters.quarter, filters.province, filters.city],
     queryFn: () => getSKFPDScoreByProvince(filters),
     enabled: requireLocation ? hasLocationFilter(filters) : true,
     ...QUERY_OPTIONS,
