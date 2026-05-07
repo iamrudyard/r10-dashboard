@@ -723,7 +723,7 @@ export async function getBFDPLocationStats(filters = {}) {
 }
 
 export async function getBFDPScoreByProvince(filters = {}) {
-  const useCityLevel = Boolean(filters.province && filters.city)
+  const useCityLevel = Boolean(filters.province && !isHucProvinceOption(filters.province))
   const [geoRows, detailRows] = await Promise.all([
     fetchAllPages(() => {
       let query = supabase
@@ -759,9 +759,17 @@ export async function getBFDPScoreByProvince(filters = {}) {
   ])
 
   const locations = useCityLevel
-    ? uniqueSorted(geoRows.map((row) => row.city_mun_name))
+    ? uniqueSorted(
+        geoRows
+          .map((row) => row.city_mun_name)
+          .filter((city) => normalizeText(city) !== normalizeText(filters.province)),
+      )
     : uniqueSorted(geoRows.map((row) => row.province_huc))
   const scoresByLocation = detailRows.reduce((groups, row) => {
+    if (useCityLevel && normalizeText(row.city_mun_name) === normalizeText(row.province_huc)) {
+      return groups
+    }
+
     const location = useCityLevel
       ? normalizeOption(row.city_mun_name)
       : normalizeOption(row.province_huc) || 'Unspecified'

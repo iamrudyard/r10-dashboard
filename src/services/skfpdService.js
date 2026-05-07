@@ -622,7 +622,7 @@ export async function getSKFPDLocationStats(filters = {}) {
 }
 
 export async function getSKFPDScoreByProvince(filters = {}) {
-  const useCityLevel = Boolean(filters.province && filters.city)
+  const useCityLevel = Boolean(filters.province && !isHucProvinceOption(filters.province))
   const [geoRows, detailRows] = await Promise.all([
     fetchAllPages(() => {
       let query = supabase
@@ -643,10 +643,18 @@ export async function getSKFPDScoreByProvince(filters = {}) {
   ])
 
   const locations = useCityLevel
-    ? uniqueSorted(geoRows.map((row) => row.city_mun_name))
+    ? uniqueSorted(
+        geoRows
+          .map((row) => row.city_mun_name)
+          .filter((city) => normalizeText(city) !== normalizeText(filters.province)),
+      )
     : uniqueSorted(geoRows.map((row) => row.province_huc))
   const scoresByLocation = detailRows.reduce((groups, row) => {
     if (useCityLevel && normalizeText(row.province_huc) !== normalizeText(filters.province)) {
+      return groups
+    }
+
+    if (useCityLevel && normalizeText(row.city_mun_name) === normalizeText(row.province_huc)) {
       return groups
     }
 

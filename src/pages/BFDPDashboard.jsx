@@ -33,6 +33,10 @@ const bfdpStatusSeries = [
   { label: 'None Compliant', value: 'None Compliant' },
 ]
 
+const hucProvinceOptions = ['city of cagayan de oro', 'city of iligan']
+const normalizeText = (value) => (typeof value === 'string' ? value.trim().toLowerCase() : '')
+const isHucProvinceOption = (value) => hucProvinceOptions.includes(normalizeText(value))
+
 function LoadingState() {
   return (
     <Card className="border border-slate-200 bg-white p-8 text-center shadow-panel">
@@ -134,18 +138,49 @@ export default function BFDPDashboard({ initialFilters }) {
     [filters.year, filters.quarter, filters.provinceHuc, filters.cityMunName],
   )
 
+  const geoOptionsQuery = useGeoOptions()
   const selectedLguPath = [filters.provinceHuc, filters.cityMunName, filters.barangayName]
     .filter(Boolean)
     .join(' > ') || 'All LGU'
+  const scoreChartUsesCityLevel = Boolean(
+    filters.provinceHuc && !isHucProvinceOption(filters.provinceHuc),
+  )
   const statusChartTitle = filters.provinceHuc && filters.cityMunName
     ? 'BFDP Status by City/Municipality'
     : 'BFDP Status by Province/HUC'
-  const scoreChartTitle = filters.provinceHuc && filters.cityMunName
+  const scoreChartTitle = scoreChartUsesCityLevel
     ? 'Avg Score by City/Municipality'
     : 'Avg Score by Province/HUC'
   const highlightedStatusLocation = selectedChartFilter.locationLabel || filters.cityMunName || filters.provinceHuc
+  const highlightedScoreLocation = useMemo(() => {
+    if (!scoreChartUsesCityLevel) {
+      return ''
+    }
 
-  const geoOptionsQuery = useGeoOptions()
+    if (filters.cityMunName) {
+      return filters.cityMunName
+    }
+
+    if (!filters.barangayName) {
+      return ''
+    }
+
+    const locations = geoOptionsQuery.data?.locations ?? []
+    const matchedLocation = locations.find(
+      (location) =>
+        location.barangay_name === filters.barangayName &&
+        (!filters.provinceHuc || location.province_huc === filters.provinceHuc),
+    )
+
+    return matchedLocation?.city_mun_name ?? ''
+  }, [
+    filters.barangayName,
+    filters.cityMunName,
+    filters.provinceHuc,
+    geoOptionsQuery.data?.locations,
+    scoreChartUsesCityLevel,
+  ])
+
   const summaryQuery = useBFDPSummary(chartFilters, { requireLocation: false })
   const locationStatsQuery = useBFDPLocationStats(chartFilters, { requireLocation: false })
   const documentsQuery = useBFDPDocumentCompletion(chartFilters, { requireLocation: false })
@@ -254,7 +289,11 @@ export default function BFDPDashboard({ initialFilters }) {
           </section>
 
           <section className="grid gap-6 xl:grid-cols-2">
-            <ScoreByProvinceChart data={scoreByProvinceQuery.data ?? []} title={scoreChartTitle} />
+            <ScoreByProvinceChart
+              data={scoreByProvinceQuery.data ?? []}
+              title={scoreChartTitle}
+              highlightedLocation={highlightedScoreLocation}
+            />
             <QuarterlyTrendChart
               data={quarterlyTrendQuery.data ?? []}
               selectedYear={filters.year}

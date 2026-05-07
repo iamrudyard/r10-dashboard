@@ -2,19 +2,49 @@ import Chart from 'react-apexcharts'
 import { Card } from '@tremor/react'
 import ChartEmptyState from './ChartEmptyState'
 
-export default function ScoreByProvinceChart({ data, title = 'Avg Score by Province/HUC' }) {
+export default function ScoreByProvinceChart({
+  data,
+  title = 'Avg Score by Province/HUC',
+  highlightedLocation = '',
+}) {
   if (!data.length) {
     return <ChartEmptyState title={title} />
   }
 
+  const toTransparentColor = (color) => {
+    if (!color?.startsWith('#') || color.length !== 7) {
+      return color
+    }
+
+    const red = Number.parseInt(color.slice(1, 3), 16)
+    const green = Number.parseInt(color.slice(3, 5), 16)
+    const blue = Number.parseInt(color.slice(5, 7), 16)
+
+    return `rgba(${red}, ${green}, ${blue}, 0.2)`
+  }
+
+  const baseColor = '#d97706'
+  const highlightColor = '#0f766e'
+  const hasHighlight = Boolean(highlightedLocation)
+  const labels = data.map((item) => item.label ?? item.city ?? item.province)
   const maxValue = Math.max(1, ...data.map((item) => item.averageScore ?? 0))
+  const seriesData = data.map((item, index) => {
+    const label = labels[index]
+    const isHighlighted = hasHighlight && label === highlightedLocation
+
+    return {
+      x: label,
+      y: item.averageScore,
+      fillColor: !hasHighlight ? baseColor : isHighlighted ? highlightColor : toTransparentColor(baseColor),
+    }
+  })
 
   const options = {
     chart: {
       toolbar: { show: false },
       fontFamily: 'Aptos, Segoe UI, sans-serif',
     },
-    colors: ['#d97706'],
+    colors: [baseColor],
     grid: {
       show: false,
     },
@@ -34,7 +64,7 @@ export default function ScoreByProvinceChart({ data, title = 'Avg Score by Provi
       style: { colors: ['#0f172a'], fontSize: '11px', fontWeight: 700 },
     },
     xaxis: {
-      categories: data.map((item) => item.label ?? item.city ?? item.province),
+      categories: labels,
       labels: {
         rotate: -35,
         trim: true,
@@ -61,7 +91,7 @@ export default function ScoreByProvinceChart({ data, title = 'Avg Score by Provi
       <h3 className="text-base font-semibold text-slate-950">{title}</h3>
       <Chart
         options={options}
-        series={[{ name: 'Average Score', data: data.map((item) => item.averageScore) }]}
+        series={[{ name: 'Average Score', data: seriesData }]}
         type="bar"
         height={340}
       />
