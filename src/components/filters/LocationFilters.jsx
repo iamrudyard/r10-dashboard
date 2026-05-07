@@ -167,6 +167,7 @@ export default function LocationFilters({
   refreshDisabled = false,
   isRefreshing = false,
   includeBarangay = true,
+  includeCity = true,
   includeQuarter = true,
   includeMonth = false,
 }) {
@@ -266,10 +267,12 @@ export default function LocationFilters({
         className={`grid gap-3 md:grid-cols-2 ${
           includeMonth
             ? 'xl:grid-cols-6'
-            : includeBarangay && includeQuarter
+            : includeCity && includeBarangay && includeQuarter
               ? 'xl:grid-cols-5'
-              : includeQuarter
+              : includeQuarter && includeCity
                 ? 'xl:grid-cols-4'
+                : includeQuarter
+                  ? 'xl:grid-cols-3'
                 : 'xl:grid-cols-3'
         }`}
       >
@@ -287,15 +290,17 @@ export default function LocationFilters({
           ))}
         </SelectField>
 
-        <SearchableSelectField
-          label="City/Municipality"
-          value={filters.cityMunName}
-          options={cityOptions}
-          placeholder="All City/Municipality"
-          onChange={(value) => updateFilter('cityMunName', value)}
-        />
+        {includeCity ? (
+          <SearchableSelectField
+            label="City/Municipality"
+            value={filters.cityMunName}
+            options={cityOptions}
+            placeholder="All City/Municipality"
+            onChange={(value) => updateFilter('cityMunName', value)}
+          />
+        ) : null}
 
-        {includeBarangay ? (
+        {includeCity && includeBarangay ? (
           <SearchableSelectField
             label="Barangay"
             value={filters.barangayName}

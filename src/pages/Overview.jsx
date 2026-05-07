@@ -5,6 +5,7 @@ import SummaryCard from '../components/cards/SummaryCard'
 import LocationFilters from '../components/filters/LocationFilters'
 import { useGeoOptions, useOverviewBFDPStats, useOverviewLocationStats } from '../hooks/useBFDPQueries'
 import { useOverviewLTRPPStats } from '../hooks/useLTRPPQueries'
+import { useOverviewRoadSafetyStats } from '../hooks/useRoadSafetyQueries'
 import { useOverviewSKFPDStats } from '../hooks/useSKFPDQueries'
 import { useSGLGDashboard } from '../hooks/useSGLGQueries'
 
@@ -70,6 +71,15 @@ const reportModules = [
     periods: ['quarter'],
   },
   {
+    id: 'road-safety',
+    title: 'Classification of Roads, Setting of Speed Limits and Collection of Road Crash Data',
+    description: 'Road safety compliance and ordinance tracking',
+    frequency: 'Quarterly',
+    status: 'Live',
+    color: 'emerald',
+    periods: ['quarter'],
+  },
+  {
     id: 'future',
     title: 'Other',
     description: 'Reserved for future schemas',
@@ -122,6 +132,15 @@ function getLTRPPFilterPayload(filters) {
     provinceHuc: filters.provinceHuc,
     cityMunName: filters.cityMunName,
     year: '2026',
+    quarter: filters.quarter,
+  }
+}
+
+function getRoadSafetyFilterPayload(filters) {
+  return {
+    provinceHuc: filters.provinceHuc,
+    cityMunName: filters.cityMunName,
+    year: filters.year,
     quarter: filters.quarter,
   }
 }
@@ -300,6 +319,15 @@ export default function Overview({ onNavigate }) {
     }),
     [filters.quarter, filters.provinceHuc, filters.cityMunName],
   )
+  const roadSafetyStatsFilters = useMemo(
+    () => ({
+      year: filters.year,
+      quarter: filters.quarter,
+      province: filters.provinceHuc,
+      city: filters.cityMunName,
+    }),
+    [filters.year, filters.quarter, filters.provinceHuc, filters.cityMunName],
+  )
   const sglgStatsFilters = useMemo(
     () => ({
       year: filters.year,
@@ -314,6 +342,7 @@ export default function Overview({ onNavigate }) {
   const isBFDPApplicable = !filters.month
   const isSKFPDApplicable = !filters.month
   const isLTRPPApplicable = !filters.month
+  const isRoadSafetyApplicable = !filters.month && !filters.barangayName && Boolean(filters.year && filters.quarter)
   const isSGLGApplicable = !filters.month && !filters.quarter && !filters.barangayName
 
   const geoOptionsQuery = useGeoOptions()
@@ -328,6 +357,10 @@ export default function Overview({ onNavigate }) {
   })
   const ltrppStatsQuery = useOverviewLTRPPStats(ltrppStatsFilters, {
     enabled: isLTRPPApplicable,
+    requireLocation: false,
+  })
+  const roadSafetyStatsQuery = useOverviewRoadSafetyStats(roadSafetyStatsFilters, {
+    enabled: isRoadSafetyApplicable,
     requireLocation: false,
   })
   const sglgStatsQuery = useSGLGDashboard(sglgStatsFilters, {
@@ -351,6 +384,7 @@ export default function Overview({ onNavigate }) {
     queryClient.invalidateQueries({ queryKey: ['overview-bfdp-stats'] })
     queryClient.invalidateQueries({ queryKey: ['overview-skfpd-stats'] })
     queryClient.invalidateQueries({ queryKey: ['overview-ltrpp-stats'] })
+    queryClient.invalidateQueries({ queryKey: ['overview-road-safety-stats'] })
     queryClient.invalidateQueries({ queryKey: ['sglg-dashboard'] })
   }
 
@@ -369,6 +403,7 @@ export default function Overview({ onNavigate }) {
           bfdpStatsQuery.isFetching ||
           skfpdStatsQuery.isFetching ||
           ltrppStatsQuery.isFetching ||
+          roadSafetyStatsQuery.isFetching ||
           sglgStatsQuery.isFetching
         }
         includeMonth
@@ -412,30 +447,36 @@ export default function Overview({ onNavigate }) {
                 </div>
                 <Badge color={reportState.color}>{reportState.label}</Badge>
               </div>
-              {report.id === 'bfdp' || report.id === 'skfpd' || report.id === 'ltrpp' ? (
+              {report.id === 'bfdp' || report.id === 'skfpd' || report.id === 'ltrpp' || report.id === 'road-safety' ? (
                 <QuarterlyComplianceCardStats
                   stats={
                     report.id === 'bfdp'
                       ? bfdpStatsQuery.data
                       : report.id === 'skfpd'
                         ? skfpdStatsQuery.data
-                        : ltrppStatsQuery.data
+                        : report.id === 'ltrpp'
+                          ? ltrppStatsQuery.data
+                          : roadSafetyStatsQuery.data
                   }
                   isLoading={
                     report.id === 'bfdp'
                       ? bfdpStatsQuery.isLoading
                       : report.id === 'skfpd'
                         ? skfpdStatsQuery.isLoading
-                        : ltrppStatsQuery.isLoading
+                        : report.id === 'ltrpp'
+                          ? ltrppStatsQuery.isLoading
+                          : roadSafetyStatsQuery.isLoading
                   }
                   isApplicable={
                     report.id === 'ltrpp'
                       ? reportState.isApplicable && isLTRPPApplicable
+                      : report.id === 'road-safety'
+                        ? reportState.isApplicable && isRoadSafetyApplicable
                       : reportState.isApplicable
                   }
                   notApplicableMessage={
-                    report.id === 'ltrpp'
-                      ? 'Not applicable for Month filter.'
+                    report.id === 'road-safety'
+                      ? 'Select a year and quarter to load this quarterly report.'
                       : 'Not applicable for Month filter.'
                   }
                 />
@@ -470,6 +511,16 @@ export default function Overview({ onNavigate }) {
                     type="button"
                     onClick={() => onNavigate('ltrpp', { filters: getLTRPPFilterPayload(filters) })}
                     disabled={!reportState.isApplicable || !isLTRPPApplicable}
+                    className="rounded-lg bg-civic-700 px-4 py-2 text-sm font-semibold text-white hover:bg-civic-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    Open
+                  </button>
+                ) : null}
+                {report.id === 'road-safety' ? (
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('road-safety', { filters: getRoadSafetyFilterPayload(filters) })}
+                    disabled={!reportState.isApplicable || !isRoadSafetyApplicable}
                     className="rounded-lg bg-civic-700 px-4 py-2 text-sm font-semibold text-white hover:bg-civic-600 disabled:cursor-not-allowed disabled:bg-slate-300"
                   >
                     Open

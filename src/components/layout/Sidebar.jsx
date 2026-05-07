@@ -4,6 +4,7 @@ const navItems = [
   { id: 'bfdp', label: 'BFDP' },
   { id: 'skfpd', label: 'SKFPD' },
   { id: 'ltrpp', label: 'LPTRPP' },
+  { id: 'road-safety', label: 'Road Class & Safety' },
   { id: 'future', label: 'Other future reports' },
 ]
 

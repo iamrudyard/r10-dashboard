@@ -3,6 +3,7 @@ import DashboardLayout from './components/layout/DashboardLayout'
 import Overview from './pages/Overview'
 import BFDPDashboard from './pages/BFDPDashboard'
 import LTRPPDashboard from './pages/LTRPPDashboard'
+import RoadSafetyDashboard from './pages/RoadSafetyDashboard'
 import SKFPDDashboard from './pages/SKFPDDashboard'
 import SGLGDashboard from './pages/SGLGDashboard'
 import SGLGPlaceholder from './pages/SGLGPlaceholder'
@@ -11,6 +12,7 @@ export default function App() {
   const [activePage, setActivePage] = useState('overview')
   const [bfdpInitialFilters, setBfdpInitialFilters] = useState(null)
   const [ltrppInitialFilters, setLtrppInitialFilters] = useState(null)
+  const [roadSafetyInitialFilters, setRoadSafetyInitialFilters] = useState(null)
   const [skfpdInitialFilters, setSkfpdInitialFilters] = useState(null)
   const [sglgInitialFilters, setSglgInitialFilters] = useState(null)
 
@@ -25,6 +27,10 @@ export default function App() {
 
     if (page === 'ltrpp' && options.filters) {
       setLtrppInitialFilters(options.filters)
+    }
+
+    if (page === 'road-safety' && options.filters) {
+      setRoadSafetyInitialFilters(options.filters)
     }
 
     if (page === 'sglg' && options.filters) {
@@ -45,6 +51,10 @@ export default function App() {
 
     if (activePage === 'ltrpp') {
       return <LTRPPDashboard initialFilters={ltrppInitialFilters} />
+    }
+
+    if (activePage === 'road-safety') {
+      return <RoadSafetyDashboard initialFilters={roadSafetyInitialFilters} />
     }
 
     if (activePage === 'sglg') {
