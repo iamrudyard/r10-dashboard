@@ -5,6 +5,8 @@ Changes are generated from the Git commit log and grouped by commit date.
 
 ## 2026-05-07
 
+- `a986aa4` feat: add provinceMode filter to SGLG Dashboard and related components
+- `5d83c1d` chore: update CHANGELOG.md
 - `ca635c0` update: package.json
 ## 2026-05-06
 - `f89845c` Enhance CHANGELOG with detailed feature updates
