@@ -5,6 +5,8 @@ Changes are generated from the Git commit log and grouped by commit date.
 
 ## 2026-05-07
 
+- `e150400` feat: add highlighted location support to ScoreByProvinceChart and update related components
+- `799a697` chore: update CHANGELOG.md
 - `a986aa4` feat: add provinceMode filter to SGLG Dashboard and related components
 - `5d83c1d` chore: update CHANGELOG.md
 - `ca635c0` update: package.json
