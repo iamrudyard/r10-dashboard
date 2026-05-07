@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Card } from '@tremor/react'
 
 const quarters = [
@@ -49,6 +49,7 @@ function SearchableSelectField({
   placeholder,
   disabled,
 }) {
+  const inputRef = useRef(null)
   const [search, setSearch] = useState(value)
   const [isOpen, setIsOpen] = useState(false)
 
@@ -82,6 +83,7 @@ function SearchableSelectField({
       </span>
       <div className="relative mt-1.5">
         <input
+          ref={inputRef}
           type="text"
           value={search}
           disabled={disabled}
@@ -102,7 +104,9 @@ function SearchableSelectField({
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
               setSearch('')
+              setIsOpen(true)
               onChange('')
+              inputRef.current?.focus()
             }}
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-1.5 text-sm font-semibold text-slate-400 hover:text-slate-700"
             aria-label={`Clear ${label}`}

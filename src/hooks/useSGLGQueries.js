@@ -21,7 +21,7 @@ export function useSGLGDashboard(filters, options = {}) {
   const enabled = options.enabled ?? true
 
   return useQuery({
-    queryKey: ['sglg-dashboard', filters.year, filters.province, filters.city, filters.status],
+    queryKey: ['sglg-dashboard', filters.year, filters.province, filters.provinceMode, filters.city, filters.status],
     queryFn: () => getSGLGDashboard(filters),
     enabled,
     ...QUERY_OPTIONS,
@@ -30,7 +30,16 @@ export function useSGLGDashboard(filters, options = {}) {
 
 export function useSGLGTable(filters) {
   return useQuery({
-    queryKey: ['sglg-table', filters.year, filters.province, filters.city, filters.status, filters.page, filters.pageSize],
+    queryKey: [
+      'sglg-table',
+      filters.year,
+      filters.province,
+      filters.provinceMode,
+      filters.city,
+      filters.status,
+      filters.page,
+      filters.pageSize,
+    ],
     queryFn: () => getSGLGTable(filters),
     placeholderData: keepPreviousData,
     ...QUERY_OPTIONS,

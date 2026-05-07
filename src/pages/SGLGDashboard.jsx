@@ -658,6 +658,7 @@ export default function SGLGDashboard({ initialFilters }) {
   const [filters, setFilters] = useState(normalizedInitialFilters)
   const [selectedChartFilter, setSelectedChartFilter] = useState({
     province: '',
+    provinceMode: '',
     city: '',
     locationLabel: '',
     status: '',
@@ -668,7 +669,7 @@ export default function SGLGDashboard({ initialFilters }) {
 
   useEffect(() => {
     setFilters(normalizedInitialFilters)
-    setSelectedChartFilter({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
+    setSelectedChartFilter({ province: '', provinceMode: '', city: '', locationLabel: '', status: '', statusLabel: '' })
     setPage(0)
   }, [normalizedInitialFilters])
 
@@ -684,6 +685,7 @@ export default function SGLGDashboard({ initialFilters }) {
     () => ({
       year: filters.year,
       province: selectedChartFilter.province || filters.provinceHuc,
+      provinceMode: selectedChartFilter.provinceMode,
       city: selectedChartFilter.city || filters.cityMunName,
       status: selectedChartFilter.status,
     }),
@@ -692,6 +694,7 @@ export default function SGLGDashboard({ initialFilters }) {
       filters.provinceHuc,
       filters.cityMunName,
       selectedChartFilter.province,
+      selectedChartFilter.provinceMode,
       selectedChartFilter.city,
       selectedChartFilter.status,
     ],
@@ -712,6 +715,7 @@ export default function SGLGDashboard({ initialFilters }) {
     () => ({
       year: dashboardFilters.year,
       province: dashboardFilters.province,
+      provinceMode: dashboardFilters.provinceMode,
       city: dashboardFilters.city,
       status: selectedChartFilter.status,
       page,
@@ -720,6 +724,7 @@ export default function SGLGDashboard({ initialFilters }) {
     [
       dashboardFilters.year,
       dashboardFilters.province,
+      dashboardFilters.provinceMode,
       dashboardFilters.city,
       page,
       pageSize,
@@ -755,7 +760,7 @@ export default function SGLGDashboard({ initialFilters }) {
 
   const handleFilterChange = (nextFilters) => {
     setPage(0)
-    setSelectedChartFilter({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
+    setSelectedChartFilter({ province: '', provinceMode: '', city: '', locationLabel: '', status: '', statusLabel: '' })
     setFilters({
       provinceHuc: nextFilters.provinceHuc ?? '',
       cityMunName: nextFilters.cityMunName ?? '',
@@ -765,12 +770,18 @@ export default function SGLGDashboard({ initialFilters }) {
 
   const handleChartFilterChange = (selection) => {
     setPage(0)
+    const nextSelection = {
+      provinceMode: selection.province && !selection.city ? 'group' : '',
+      ...selection,
+    }
+
     setSelectedChartFilter((current) =>
-      current.province === selection.province &&
-      current.city === selection.city &&
-      current.status === selection.status
-        ? { province: '', city: '', locationLabel: '', status: '', statusLabel: '' }
-        : selection,
+      current.province === nextSelection.province &&
+      current.provinceMode === nextSelection.provinceMode &&
+      current.city === nextSelection.city &&
+      current.status === nextSelection.status
+        ? { province: '', provinceMode: '', city: '', locationLabel: '', status: '', statusLabel: '' }
+        : nextSelection,
     )
   }
 
@@ -868,7 +879,7 @@ export default function SGLGDashboard({ initialFilters }) {
                 : ''
             }
             onClearFilter={() =>
-              handleChartFilterChange({ province: '', city: '', locationLabel: '', status: '', statusLabel: '' })
+              handleChartFilterChange({ province: '', provinceMode: '', city: '', locationLabel: '', status: '', statusLabel: '' })
             }
             onPageChange={setPage}
             onPageSizeChange={(nextPageSize) => {

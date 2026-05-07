@@ -137,6 +137,10 @@ function filterRowsBySpecificLgu(rows, filters = {}) {
     return rows.filter((row) => normalizeText(getGeo(row).city_mun_name) === normalizeText(filters.city))
   }
 
+  if (filters.provinceMode === 'group') {
+    return rows
+  }
+
   if (filters.province) {
     return rows.filter((row) => isSelectedProvinceHucRow(row, filters.province))
   }
