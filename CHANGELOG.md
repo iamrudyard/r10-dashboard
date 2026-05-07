@@ -6,11 +6,8 @@ Changes are generated from the Git commit log and grouped by commit date.
 ## 2026-05-07
 
 - `5167f7a` feat: add Road Safety Dashboard with charts and tables for road safety compliance data
-- `a50ecea` chore: update CHANGELOG.md
 - `e150400` feat: add highlighted location support to ScoreByProvinceChart and update related components
-- `799a697` chore: update CHANGELOG.md
 - `a986aa4` feat: add provinceMode filter to SGLG Dashboard and related components
-- `5d83c1d` chore: update CHANGELOG.md
 - `ca635c0` update: package.json
 ## 2026-05-06
 - `f89845c` Enhance CHANGELOG with detailed feature updates
